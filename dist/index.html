@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Char Scorer</title>
+	<style>
+		#drop-area {
+			width: 300px;
+			height: 200px;
+			border: 2px dashed #ccc;
+			text-align: center;
+			padding: 40px;
+			font-size: 18px;
+			cursor: pointer;
+		}
+
+		#image {
+			width: 300px;
+			height: 200px;
+			object-fit: cover;
+		}
+
+		#score,
+		#logs {
+			margin-top: 20px;
+			font-family: monospace;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="drop-area" ondrop="handleDrop(event)" ondragover="preventDefault(event)">
+		Drop char card here
+		<img id="image" />
+	</div>
+
+	<div id="score"></div>
+	<div id="logs"></div>
+
+	<script src="index.js"></script>
+	<script>
+		var logsElement = document.getElementById('logs');
+		var scoreElement = document.getElementById('score');
+		var imageElement = document.getElementById('image');
+		function handleDrop(event) {
+			event.preventDefault();
+			var file = event.dataTransfer.files[0];
+			//show image to drop area
+			imageElement.src = URL.createObjectURL(file);
+			var reader = new FileReader();
+			reader.onload = function (event) {
+				logsElement.innerHTML = "";
+				scoreElement.innerHTML = "Calculating score...";
+				var image = new Uint8Array(event.target.result);
+				try {
+					var score_details = char_grader(image, displayLogs);
+					displayScore(score_details);
+				} catch (error) {
+					logsElement.innerHTML += "<br><font color=\"red\">" + error + "</font>";
+				}
+			};
+			reader.readAsArrayBuffer(file);
+		}
+
+		function preventDefault(event) {
+			event.preventDefault();
+		}
+
+		function displayScore(score_details) {
+			scoreElement.innerHTML = "Name: " + score_details.name + '<br>Score: ' + score_details.score;
+		}
+
+		function displayLogs(logs) {
+			logsElement.innerHTML += "<br>" + logs;
+		}
+	</script>
+</body>
+
+</html>
