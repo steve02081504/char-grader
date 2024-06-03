@@ -95,12 +95,12 @@ export function char_grader(arg, progress_stream = console.log) {
 		let cardsizeMB = cardsize / 1024 / 1024
 		score_details.score += cardsizeMB
 		score_details.logs.push({
-			type: 'Crad size',
+			type: 'card size',
 			score: cardsizeMB
 		})
-		progress_stream(`Crad size: ${cardsize} bytes, ${cardsizeMB} scores.`)
+		progress_stream(`card size: ${cardsize} bytes, ${cardsizeMB} scores.`)
 		if (cardsizeMB > 100)
-			do_reparation('Crad size', cardsizeMB)
+			do_reparation('card size', cardsizeMB)
 	}
 	GradingByTokenSize('description & constant WI infos & mes_example', [
 		format_text, json.mes_example,
