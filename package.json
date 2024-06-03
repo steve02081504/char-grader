@@ -1,0 +1,27 @@
+{
+	"name": "char-grader",
+	"version": "0.0.0",
+	"main": "src/index.mjs",
+	"dependencies": {
+		"@rollup/plugin-json": "^6.1.0",
+		"buffer": "^6.0.3",
+		"js-tiktoken": "^1.0.12",
+		"lz-string": "^1.5.0",
+		"png-chunk-text": "^1.0.0",
+		"png-chunks-encode": "^1.0.0",
+		"png-chunks-extract": "^1.0.0",
+		"tiktoken": "^1.0.15"
+	},
+	"devDependencies": {
+		"@rollup/plugin-commonjs": "^25.0.8",
+		"@rollup/plugin-node-resolve": "^15.2.3",
+		"rollup": "^4.18.0",
+		"rollup-plugin-polyfill-node": "^0.13.0"
+	},
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"build": "rollup -c ./src/rollup.config.mjs"
+	},
+	"author": "steve02081504",
+	"description": ""
+}

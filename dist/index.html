@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Char Scorer</title>
+	<script src="https://cdn.jsdelivr.net/npm/showdown"></script>
+	<script src="https://cdn.jsdelivr.net/npm/darkreader"></script>
+	<script>
+		DarkReader.setFetchMethod(window.fetch)
+		DarkReader.enable()
+	</script>
+	<style>
+		#drop-area {
+			width: 100%;
+			height: auto;
+			border: 2px dashed #ccc;
+			text-align: center;
+			padding: 20px;
+			font-size: 18px;
+			cursor: pointer;
+		}
+
+		#image {
+			height: auto;
+			max-width: 80%;
+			object-fit: cover;
+		}
+
+		#text-area {
+			margin-top: 20px;
+			height: auto;
+			font-family: monospace;
+		}
+
+		/* 媒体查询：当屏幕宽度大于等于992px时 */
+		@media (min-width: 992px) {
+			#container {
+				display: flex;
+			}
+
+			#drop-area {
+				width: 500px;
+			}
+
+			#text-area {
+				width: auto;
+				padding: 30px;
+			}
+		}
+	</style>
+</head>
+
+<body>
+	<div id="container">
+		<input type="file" id="file-input" style="display: none;" accept="image/*, application/json" onchange="handleFileSelect(event)">
+		<div id="drop-area" ondrop="handleDrop(event)" ondragover="event.preventDefault()" onclick="fileInput.click()">
+			Click or Drop char card here
+			<br>
+			<img id="image" />
+		</div>
+
+		<div id="text-area">
+			<div id="score"></div>
+			<div id="logs"></div>
+			<div id="cardReadme"></div>
+		</div>
+	</div>
+
+	<script src="index.js"></script>
+	<script>
+		var logsElement = document.getElementById('logs');
+		var scoreElement = document.getElementById('score');
+		var imageElement = document.getElementById('image');
+		var readmeElement = document.getElementById('cardReadme');
+		var fileInput = document.getElementById('file-input');
+		var dropArea = document.getElementById('drop-area');
+		var textArea = document.getElementById('text-area');
+		var converter = new showdown.Converter({
+			strikethrough: true,
+			tables: true,
+			tasklists: true,
+			openLinksInNewWindows: true,
+			underline: true,
+			simpleLineBreaks: true,
+			emoji: true
+		});
+
+		function handleFileSelect(event) {
+			var file = event.target.files[0];
+			//if json
+			let is_json = file.type == 'application/json'
+			if (is_json)
+				imageElement.src = ''
+			else
+				imageElement.src = URL.createObjectURL(file);
+			var reader = new FileReader();
+			reader.onload = event => {
+				logsElement.innerHTML = "";
+				scoreElement.innerHTML = "Calculating score...";
+				var card
+				if (is_json) card = event.target.result;
+				else card = new Uint8Array(event.target.result);
+				try {
+					var score_details = char_grader(card, displayLogs);
+					displayScore(score_details);
+					readmeElement.innerHTML = converter.makeHtml(score_details.index);
+				} catch (error) {
+					logsElement.innerHTML += "<br><font color=\"red\">" + error + "</font>";
+				}
+				textArea.appendChild(readmeElement);
+				if (imageElement.scrollHeight * .8 < scoreElement.scrollHeight + logsElement.scrollHeight)
+					document.body.appendChild(readmeElement);
+			};
+			if (is_json) reader.readAsText(file);
+			else reader.readAsArrayBuffer(file);
+		}
+
+		function handleDrop(event) {
+			event.preventDefault();
+			handleFileSelect({ target: event.dataTransfer });
+		}
+
+		let red_tags = /^(furry|福瑞|r18g|18g|ntr|ntl|牛头人|寝取り|寝取|BL|boys love|boyslove|boys-love)$/gi
+		let green_tags = /^(loli|萝莉|幼女|shota|正太|孩童|乱伦)$/gi
+		let golden_tags = /^(MasterLove|Master-love|Master love|麻辣|尘白|尘白禁区)$/gi
+		let pink_tags = /^(恋爱|爱情|情感|纯爱|恋人|Lover)$/gi
+		let yellow_tags = /^(nsfw|hentai)$/gi
+
+		function TagColorAdder(Tag) {
+			if (red_tags.test(Tag)) return `<font color="red">${Tag}</font>`
+			if (green_tags.test(Tag)) return `<font color="green">${Tag}</font>`
+			if (yellow_tags.test(Tag)) return `<font color="yellow">${Tag}</font>`
+			if (golden_tags.test(Tag)) return `<font color="gold">${Tag}</font>`
+			if (pink_tags.test(Tag)) return `<font color="pink">${Tag}</font>`
+			return Tag
+		}
+		function displayScore(score_details) {
+			scoreElement.innerHTML = "Name: " + score_details.name
+			if (score_details.sex) scoreElement.innerHTML += '<br>Sex: ' + score_details.sex
+			if (score_details.age) scoreElement.innerHTML += '<br>Age: ' + score_details.age
+			if (score_details.tall) scoreElement.innerHTML += '<br>Tall: ' + score_details.tall
+			if (score_details.weight) scoreElement.innerHTML += '<br>Weight: ' + score_details.weight
+			if (score_details.birthday) scoreElement.innerHTML += '<br>Birthday: ' + score_details.birthday
+			if (score_details.bwh) scoreElement.innerHTML += '<br>BWH: ' + score_details.bwh
+			if (score_details.blood_type) scoreElement.innerHTML += '<br>Blood type: ' + score_details.blood_type
+			if (score_details.tags.length)
+				scoreElement.innerHTML += '<br>Tags: ' + score_details.tags.map(TagColorAdder).join(', ')
+			scoreElement.innerHTML += '<br>Score: ' + score_details.score
+		}
+
+		function displayLogs(log) {
+			log = log.replace(/that\'s/g, 'that is')
+			log = log.replace(/\"([^\"]+)\"/g, '"<font color="blue">$1</font>"')
+			log = log.replace(/\'([^\']+)\'/g, "'<font color=\"blue\">$1</font>'")
+			log = log.replace(/that is/g, 'that\'s')
+			if (log.startsWith('[reparation] ')) log = `<font color="magenta">${log}</font>`
+			if (log.startsWith('[info] ')) log = `<font color="green">${log}</font>`
+			if (log.startsWith('[warning] ')) log = `<font color="orange">${log}</font>`
+			logsElement.innerHTML += "<br>" + log;
+		}
+	</script>
+</body>
+
+</html>
