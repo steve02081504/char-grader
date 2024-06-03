@@ -94,9 +94,16 @@ export function char_grader(arg, progress_stream = console.log) {
 			do_reparation(title, size, scale, reparation_scale)
 		return size
 	}
-	GradingByTokenSize('description & constant WI infos & mes_example', [
-		format_text, json.mes_example
+	GradingByTokenSize('description & constant WI infos', [
+		format_text
 	], 1, 9037)
+	json.mes_example = json.mes_example || ""
+	json.mes_example = json.mes_example.split('<START>')
+	BaseGradingByTokenSize('mes_example', json.mes_example, 0.65)
+	let superLargeMes = json.mes_example.filter(_ => _.length > 2500)
+	if (superLargeMes.length) {
+		do_reparation('mes_example', superLargeMes.map(_ => _.length).reduce((a, b) => a + b), 0.65)
+	}
 	GradingByTokenSize('personality & scenario', [
 		json.personality, json.scenario
 	], 0.5)
@@ -104,7 +111,7 @@ export function char_grader(arg, progress_stream = console.log) {
 	GradingByTokenSize('system_prompt & depth_prompt', [
 		charData?.system_prompt, charData?.extensions?.depth_prompt?.prompt
 	], 0.3)
-	if (format_text.includes('    ') || format_text.includes('\t')) {
+	if (format_text.includes('\n    ') || format_text.includes('\n\t\t')) {
 		let format_name = ''
 		let yaml_score = format_text.match(/\n\s+-\s*\S/g)?.length
 		let json_score = format_text.match(/\"\,\s*\n/g)?.length + format_text.match(/\{\s*\n/g)?.length
@@ -113,12 +120,13 @@ export function char_grader(arg, progress_stream = console.log) {
 		else if (json_score >= yaml_score && json_score >= xml_score) format_name = 'json'
 		else if (xml_score >= json_score && xml_score >= yaml_score) format_name = 'xml'
 		if (format_name) {
-			score_details.score *= 0.4
+			let scale = format_name === 'json' ? 0.6 : 0.8
+			score_details.score *= scale
 			score_details.logs.push({
 				type: `format: ${format_name}`,
-				scale: 0.4
+				scale: scale
 			})
-			progress_stream(`format: ${format_name}, all scores reduced as scale 0.4.`)
+			progress_stream(`format: ${format_name}, all scores reduced as scale ${scale}.`)
 		}
 	}
 
