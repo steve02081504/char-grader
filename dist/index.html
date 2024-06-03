@@ -108,7 +108,10 @@
 		}
 
 		function displayScore(score_details) {
-			scoreElement.innerHTML = "Name: " + score_details.name + '<br>Tags: ' + score_details.tags.join(', ') + '<br>Score: ' + score_details.score;
+			scoreElement.innerHTML = "Name: " + score_details.name
+			if (score_details.tags.length)
+				scoreElement.innerHTML += '<br>Tags: ' + score_details.tags.join(', ')
+			scoreElement.innerHTML += '<br>Score: ' + score_details.score
 		}
 
 		function displayLogs(logs) {
