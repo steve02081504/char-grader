@@ -72,7 +72,7 @@ export function char_grader(arg, progress_stream = console.log) {
 		})
 		return size
 	}
-	function GradingByTokenSize(title, str_array, scale = 1, reparation_startsize = 450, reparation_scale = 1.03) {
+	function GradingByTokenSize(title, str_array, scale = 1, reparation_startsize = 450, reparation_scale = 1/1.03) {
 		let size = BaseGradingByTokenSize(title, str_array, scale)
 		if (size >= reparation_startsize) {
 			let diff = Math.pow(size, reparation_scale) * scale
