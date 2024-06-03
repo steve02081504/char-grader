@@ -12,13 +12,17 @@ function remove_simple_marcos(object) {
 }
 var encoder = new Tiktoken(o200k_base);
 function get_token_size(str_array) {
-	return encoder.encode(str_array.join('\n')).length
+	return encoder.encode(str_array.filter(_ => _?.length).join('\n')).length
 }
 
 
 export function char_grader(arg, progress_stream = console.log) {
 	progress_stream("Initializing...")
-	if (arg instanceof ArrayBuffer || arg instanceof Uint8Array) arg = read(arg);
+	let cardsize = 0;
+	if (arg instanceof ArrayBuffer || arg instanceof Uint8Array) {
+		cardsize = arg.byteLength
+		arg = read(arg);
+	}
 	if (Object(arg) instanceof String) arg = JSON.parse(arg);
 	/** @type {import('./charData.mjs').v1CharData} */
 	let json = arg
@@ -72,18 +76,31 @@ export function char_grader(arg, progress_stream = console.log) {
 		})
 		return size
 	}
-	function GradingByTokenSize(title, str_array, scale = 1, reparation_startsize = 450, reparation_scale = 1/1.03) {
+	function do_reparation(title, size, scale = 1, reparation_scale = 1 / 1.03) {
+		let diff = Math.pow(size, reparation_scale) * scale
+		score_details.score -= diff
+		score_details.logs.push({
+			type: `${title} too large`,
+			score: -diff
+		})
+		progress_stream(`[reparation] ${title} too large: ${-diff} scores.`)
+	}
+	function GradingByTokenSize(title, str_array, scale = 1, reparation_startsize = 450, reparation_scale = 1 / 1.03) {
 		let size = BaseGradingByTokenSize(title, str_array, scale)
-		if (size >= reparation_startsize) {
-			let diff = Math.pow(size, reparation_scale) * scale
-			score_details.score -= diff
-			score_details.logs.push({
-				type: `${title} too large`,
-				score: -diff
-			})
-			progress_stream(`[reparation] ${title} too large: ${-diff} scores.`)
-		}
+		if (size >= reparation_startsize)
+			do_reparation(title, size, scale, reparation_scale)
 		return size
+	}
+	if (cardsize) {
+		let cardsizeMB = cardsize / 1024 / 1024
+		score_details.score += cardsizeMB
+		score_details.logs.push({
+			type: 'Crad size',
+			score: cardsizeMB
+		})
+		progress_stream(`Crad size: ${cardsize} bytes, ${cardsizeMB} scores.`)
+		if (cardsizeMB > 100)
+			do_reparation('Crad size', cardsizeMB)
 	}
 	GradingByTokenSize('description & constant WI infos & mes_example', [
 		format_text, json.mes_example,
@@ -121,14 +138,49 @@ export function char_grader(arg, progress_stream = console.log) {
 			score: wibook_entries.length * 5
 		})
 		progress_stream(`greenWI_entries: ${wibook_entries.length} green entries, ${wibook_entries.length * 5} scores.`)
-		let key_num = wibook_entries.map(_ => _.keys.length + _.secondary_keys.length).reduce((a, b) => a + b, 0)
+		let key_array = []
+		for (const entry of wibook_entries) {
+			key_array.push(...entry.keys)
+			key_array.push(...entry.secondary_keys)
+		}
+		let key_num = [...new Set(key_array)].length
 		score_details.score += key_num * 2
 		score_details.logs.push({
-			type: 'key_num',
+			type: 'unique_key_num',
 			score: key_num * 2
 		})
-		progress_stream(`key_num: ${key_num} keys, ${key_num * 2} scores.`)
+		progress_stream(`unique_key_num: ${key_num} unique keys, ${key_num * 2} scores.`)
+		key_num = key_array.length - key_num;
+		score_details.score += key_num * 0.4
+		score_details.logs.push({
+			type: 'multi_time_key_num',
+			score: key_num * 0.4
+		})
+		progress_stream(`multi_time_key_num: ${key_num} multi time keys, ${key_num * 0.4} scores.`)
 		BaseGradingByTokenSize("greenWI_total_token_size", wibook_entries.map(_ => _.content), 0.6)
+
+		let superLargeEntries = wibook_entries.filter(_ => _?.content?.length > 2710)
+		if (superLargeEntries.length > 0) {
+			let size = superLargeEntries.map(_ => _.content.length).reduce((a, b) => a + b)
+			let entrie_names = superLargeEntries.map(_ => _.comment).filter(_ => _).join(', ')
+			do_reparation(`greenWI ${entrie_names}`, size, 0.6)
+		}
+	}
+	if (charData?.alternate_greetings) {
+		score_details.score += charData.alternate_greetings.length * 30
+		score_details.logs.push({
+			type: 'alternate_greetings',
+			score: charData.alternate_greetings.length * 30
+		})
+		progress_stream(`alternate_greetings: ${charData.alternate_greetings.length} alternate greetings, ${charData.alternate_greetings.length * 30} scores.`)
+	}
+	if (charData?.extensions?.group_greetings) {
+		score_details.score += charData.extensions.group_greetings.length * 20
+		score_details.logs.push({
+			type: 'group_greetings',
+			score: charData.extensions.group_greetings.length * 20
+		})
+		progress_stream(`group_greetings: ${charData.extensions.group_greetings.length} group greetings, ${charData.extensions.group_greetings.length * 20} scores.`)
 	}
 	return score_details
 }
