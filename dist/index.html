@@ -3,6 +3,7 @@
 
 <head>
 	<title>Char Scorer</title>
+	<script src="https://cdn.jsdelivr.net/npm/showdown"></script>
 	<script src="https://cdn.jsdelivr.net/npm/darkreader"></script>
 	<script>
 		DarkReader.setFetchMethod(window.fetch)
@@ -61,6 +62,7 @@
 		<div id="text-area">
 			<div id="score"></div>
 			<div id="logs"></div>
+			<div id="cardReadme"></div>
 		</div>
 	</div>
 
@@ -69,7 +71,16 @@
 		var logsElement = document.getElementById('logs');
 		var scoreElement = document.getElementById('score');
 		var imageElement = document.getElementById('image');
+		var readmeElement = document.getElementById('cardReadme');
 		var fileInput = document.getElementById('file-input');
+		var converter = new showdown.Converter({
+			strikethrough: true,
+			tables: true,
+			tasklists: true,
+			openLinksInNewWindows: true,
+			underline: true,
+			emoji: true
+		});
 
 		function handleFileSelect(event) {
 			var file = event.target.files[0];
@@ -83,6 +94,7 @@
 				try {
 					var score_details = char_grader(image, displayLogs);
 					displayScore(score_details);
+					readmeElement.innerHTML = converter.makeHtml(score_details.index);
 				} catch (error) {
 					logsElement.innerHTML += "<br><font color=\"red\">" + error + "</font>";
 				}
@@ -96,7 +108,7 @@
 		}
 
 		function displayScore(score_details) {
-			scoreElement.innerHTML = "Name: " + score_details.name + '<br>Score: ' + score_details.score;
+			scoreElement.innerHTML = "Name: " + score_details.name + '<br>Tags: ' + score_details.tags.join(', ') + '<br>Score: ' + score_details.score;
 		}
 
 		function displayLogs(logs) {
