@@ -228,7 +228,13 @@ export function char_grader(arg, progress_stream = console.log) {
 		})
 		progress_stream(`creatorcomment not found: ${diff} scores.`)
 	}
-	if (json?.tags?.length) {
+	json.tags = json.tags || []
+	let cleard_tags = json.tags.filter(
+		_ => !(
+			_.includes('、') || _.includes('·') || _.includes('，') || _.includes('\\') || _.includes('/')
+		) && _.trim().length
+	)
+	if (cleard_tags?.length) {
 		score_details.score += json.tags.length * 3
 		score_details.logs.push({
 			type: 'tags',
