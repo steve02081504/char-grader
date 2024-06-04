@@ -24,7 +24,7 @@ export function char_grader(arg, progress_stream = console.log) {
 		cardsize = arg.byteLength
 		arg = read(arg);
 	}
-	if (Object(arg) instanceof String) arg = JSON.parse(arg.replace(/\r\n/g, '\n'));
+	if (Object(arg) instanceof String) arg = JSON.parse(arg.replace(/\\r\\n/g, '\\n'));
 	/** @type {import('./charData.mjs').v1CharData} */
 	let json = arg
 	var score_details = {
