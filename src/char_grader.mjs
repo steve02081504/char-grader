@@ -4,7 +4,7 @@ import { o200k_base } from './o200k_base.mjs';
 import { arraysEqual } from './tools.mjs';
 import { compressToUTF16 } from 'lz-string';
 function simple_marco_remover(str) {
-	return str.replace(/{{\/\/([\s\S]*?)}}/g, '').replace(/\{\{(user|char)\}\}/gi, 'name');
+	return str.replace(/{{\/\/([\s\S]*?)}}/g, '').replace(/\{\{user\}\}/i, 'user').replace(/\{\{char\}\}/i, 'char');
 }
 function remove_simple_marcos(object) {
 	if (Object(object) instanceof String) return simple_marco_remover(object)
@@ -89,23 +89,24 @@ export function char_grader(arg, progress_stream = console.log) {
 			type: `${title} too large`,
 			score: -diff
 		})
-		progress_stream(`[reparation] ${title} too large: ${-diff} scores.`)
+		progress_stream(`[reparation] ${title}: ${-diff} scores.`)
+		return diff
 	}
 	function GradingByTokenSize(title, str_array, scale = 1, reparation_startsize = 450, reparation_scale = 1 / 1.03) {
 		let size = BaseGradingByTokenSize(title, str_array, scale)
 		if (size >= reparation_startsize)
-			do_reparation(title, size, scale, reparation_scale)
+			do_reparation(title + ' too large', size, scale, reparation_scale)
 		return size
 	}
 	GradingByTokenSize('description & constant WI infos', [
 		format_text
 	], 1, 9037)
 	json.mes_example = json.mes_example || ""
-	json.mes_example = json.mes_example.split(/<(START|Start|start)>/)
+	json.mes_example = json.mes_example.split(/<START>/i)
 	BaseGradingByTokenSize('mes_example', json.mes_example, 0.65)
 	let superLargeMes = json.mes_example.filter(_ => _.length > 2500)
 	if (superLargeMes.length) {
-		do_reparation('mes_example', superLargeMes.map(_ => _.length).reduce((a, b) => a + b), 0.65)
+		do_reparation('some mes_example is too large', superLargeMes.map(_ => _.length).reduce((a, b) => a + b), 0.65)
 	}
 	GradingByTokenSize('personality & scenario', [
 		json.personality, json.scenario
@@ -149,12 +150,37 @@ export function char_grader(arg, progress_stream = console.log) {
 		let gWI_score = Math.pow(gWI_size, 1 / 1.15)
 		BaseGrading("greenWI_total_token_size", gWI_size, "token size", 1, 20, 1 / 1.15)
 
+		let related_names = [
+			json.name, 'char', 'user', '你'
+		]
+		let related_regex = new RegExp(`(${related_names.join('|')})`, 'g')
+		let quoted_regex = /(\"[^\"]+\")|([\”\“][^\”\“]+[\”\“])/g
+		function is_related(str) {
+			let matched = str.replace(quoted_regex, '').match(related_regex)
+			return matched?.length > 1
+		}
+		let unrelated_entries = wibook_entries.filter(_ => _?.content?.length > 27 && !is_related(_.content))
+		if (unrelated_entries.length > 0) {
+			let size = get_token_size(unrelated_entries.map(_ => _.content))
+			let entrie_names = unrelated_entries.map(_ => _.comment).filter(_ => _).join(', ')
+			let diff = Math.pow(gWI_size - size, 1 / 1.15)
+			do_reparation(`greenWI ${entrie_names} not directly related to ${json.name} or user`, gWI_score - diff, 1, 1.03)
+			gWI_score -= diff
+			gWI_size -= size
+		}
+		wibook_entries = wibook_entries.filter(_ => !unrelated_entries.includes(_))
+		json.data.character_book.entries = wibook_entries
+
 		let superLargeEntries = wibook_entries.filter(_ => _?.content?.length > 2710)
 		if (superLargeEntries.length > 0) {
 			let size = get_token_size(superLargeEntries.map(_ => _.content))
 			let entrie_names = superLargeEntries.map(_ => _.comment).filter(_ => _).join(', ')
-			do_reparation(`greenWI ${entrie_names}`, gWI_score - Math.pow(gWI_size - size, 1 / 1.15))
+			let diff = Math.pow(gWI_size - size, 1 / 1.15)
+			do_reparation(`greenWI ${entrie_names} too large`, gWI_score - diff)
+			gWI_score -= diff
+			gWI_size -= size
 		}
+		wibook_entries = wibook_entries.filter(_ => !superLargeEntries.includes(_))
 	}
 	if (charData?.alternate_greetings)
 		BaseGrading('alternate_greetings', charData.alternate_greetings.length, 'alternate greetings', 30)
@@ -183,14 +209,11 @@ export function char_grader(arg, progress_stream = console.log) {
 		score_details.score += cardsizeMB
 		BaseGrading('card size', cardsizeMB, 'MB', 0.5)
 		if (cardsizeMB > 100)
-			do_reparation('card size', cardsizeMB)
+			do_reparation('card size too large', cardsizeMB)
 	}
 	json.creatorcomment = json.creatorcomment || ""
 	let cleard_creatorcomment = json.creatorcomment.split('\n').filter(
-		_ => !(
-			_.includes('http') || _.includes('Discord') || _.includes('GitHub') ||
-			_.includes('类脑') || _.includes('Telegram') || _.includes('社区')
-		) && _.trim().length
+		_ => (!_.match(/http|Discord|GitHub|类脑|Telegram|社区/i)) && _.trim().length
 	).join('\n')
 	if (cleard_creatorcomment)
 		BaseGrading('creatorcomment', cleard_creatorcomment.length, 'bytes', 1 / 125, 5)
@@ -205,9 +228,7 @@ export function char_grader(arg, progress_stream = console.log) {
 	}
 	json.tags = json.tags || []
 	let cleard_tags = json.tags.filter(
-		_ => !(
-			_.includes('、') || _.includes('·') || _.includes('，') || _.includes('\\') || _.includes('/')
-		) && _.trim().length
+		_ => (!_.match(/、|·|，|\\|\//g)) && _.trim().length
 	)
 	if (cleard_tags?.length)
 		BaseGrading('tags', cleard_tags.length, 'tags', 3)
