@@ -21,8 +21,8 @@
 		}
 
 		#image {
-			width: 80%;
 			height: auto;
+			max-width: 80%;
 			object-fit: cover;
 		}
 
@@ -74,6 +74,8 @@
 		var imageElement = document.getElementById('image');
 		var readmeElement = document.getElementById('cardReadme');
 		var fileInput = document.getElementById('file-input');
+		var dropArea = document.getElementById('drop-area');
+		var textArea = document.getElementById('text-area');
 		var converter = new showdown.Converter({
 			strikethrough: true,
 			tables: true,
@@ -100,6 +102,9 @@
 				} catch (error) {
 					logsElement.innerHTML += "<br><font color=\"red\">" + error + "</font>";
 				}
+				textArea.appendChild(readmeElement);
+				if (imageElement.scrollHeight * .8 < scoreElement.scrollHeight + logsElement.scrollHeight)
+					document.body.appendChild(readmeElement);
 			};
 			reader.readAsArrayBuffer(file);
 		}
