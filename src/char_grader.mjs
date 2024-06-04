@@ -101,7 +101,7 @@ export function char_grader(arg, progress_stream = console.log) {
 		format_text
 	], 1, 9037)
 	json.mes_example = json.mes_example || ""
-	json.mes_example = json.mes_example.split('<START>')
+	json.mes_example = json.mes_example.split(/<(START|Start|start)>/)
 	BaseGradingByTokenSize('mes_example', json.mes_example, 0.65)
 	let superLargeMes = json.mes_example.filter(_ => _.length > 2500)
 	if (superLargeMes.length) {
