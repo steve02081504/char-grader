@@ -145,13 +145,15 @@ export function char_grader(arg, progress_stream = console.log) {
 		BaseGrading('unique_key_num', key_num, 'unique keys', 2)
 		key_num = key_array.length - key_num;
 		BaseGrading('multi_time_key_num', key_num, 'multi time keys', 0.4)
-		BaseGradingByTokenSize("greenWI_total_token_size", wibook_entries.map(_ => _.content), 1, 20, 1 / 1.15)
+		let gWI_size = get_token_size(wibook_entries.map(_ => _.content))
+		let gWI_score = Math.pow(gWI_size, 1 / 1.15)
+		BaseGrading("greenWI_total_token_size", gWI_size, "token size", 1, 20, 1 / 1.15)
 
 		let superLargeEntries = wibook_entries.filter(_ => _?.content?.length > 2710)
 		if (superLargeEntries.length > 0) {
-			let size = superLargeEntries.map(_ => _.content.length).reduce((a, b) => a + b)
+			let size = get_token_size(superLargeEntries.map(_ => _.content))
 			let entrie_names = superLargeEntries.map(_ => _.comment).filter(_ => _).join(', ')
-			do_reparation(`greenWI ${entrie_names}`, Math.pow(size, 1 / 1.15), 1)
+			do_reparation(`greenWI ${entrie_names}`, gWI_score - Math.pow(gWI_size - size, 1 / 1.15))
 		}
 	}
 	if (charData?.alternate_greetings)
