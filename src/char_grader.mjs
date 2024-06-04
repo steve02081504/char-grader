@@ -70,6 +70,7 @@ export function char_grader(arg, progress_stream = console.log) {
 	progress_stream("Grading...")
 	function BaseGrading(title, data, data_type = 'tokens', scale = 1, base_score = 0, pow = 1) {
 		let score = Math.pow(data, pow) * scale + base_score
+		if (isNaN(score)) throw new Error(`NaN generated in BaseGrading, args: ${title}, ${data}, ${data_type}, ${scale}, ${base_score}, ${pow}`)
 		score_details.score += score
 		progress_stream(`${title}: ${data} ${data_type}, ${score} scores.`)
 		score_details.logs.push({
@@ -84,6 +85,8 @@ export function char_grader(arg, progress_stream = console.log) {
 	}
 	function do_reparation(title, size, scale = 1, reparation_scale = 1 / 1.03) {
 		let diff = Math.pow(size, reparation_scale) * scale
+		if (isNaN(diff))
+			throw new Error(`NaN generated in do_reparation, args: ${title}, ${size}, ${scale}, ${reparation_scale}`)
 		score_details.score -= diff
 		score_details.logs.push({
 			type: `${title} too large`,
@@ -104,10 +107,9 @@ export function char_grader(arg, progress_stream = console.log) {
 	json.mes_example = json.mes_example || ""
 	json.mes_example = json.mes_example.split(/<START>/i)
 	BaseGradingByTokenSize('mes_example', json.mes_example, 0.65)
-	let superLargeMes = json.mes_example.filter(_ => _.length > 2500)
-	if (superLargeMes.length) {
-		do_reparation('some mes_example is too large', superLargeMes.map(_ => _.length).reduce((a, b) => a + b), 0.65)
-	}
+	let superLargeMes = json.mes_example.filter(_ => encoder.encode(_).length > 2500)
+	if (superLargeMes.length)
+		do_reparation('some mes_example is too large', superLargeMes.map(_ => encoder.encode(_).length).reduce((a, b) => a + b), 0.65)
 	GradingByTokenSize('personality & scenario', [
 		json.personality, json.scenario
 	], 0.5)
@@ -173,19 +175,19 @@ export function char_grader(arg, progress_stream = console.log) {
 		if (unrelated_entries.length > 0) {
 			let size = get_token_size(unrelated_entries.map(_ => _.content))
 			let diff = Math.pow(gWI_size - size, 1 / 1.15)
-			do_reparation(`greenWI ${get_entrie_names(unrelated_entries)} not directly related to ${json.name} or user`, gWI_score - diff, 1, 1.03)
-			gWI_score -= diff
+			gWI_score = Math.abs(gWI_score - diff)
+			do_reparation(`greenWI ${get_entrie_names(unrelated_entries)} not directly related to ${json.name} or user`, gWI_score, 1, 1.03)
 			gWI_size -= size
 		}
 		wibook_entries = wibook_entries.filter(_ => !unrelated_entries.includes(_))
 		json.data.character_book.entries = wibook_entries
 
-		let superLargeEntries = wibook_entries.filter(_ => _?.content?.length > 2710)
+		let superLargeEntries = wibook_entries.filter(_ => encoder.encode(_?.content).length > 2710)
 		if (superLargeEntries.length > 0) {
 			let size = get_token_size(superLargeEntries.map(_ => _.content))
 			let diff = Math.pow(gWI_size - size, 1 / 1.15)
-			do_reparation(`greenWI ${get_entrie_names(superLargeEntries)} too large`, gWI_score - diff)
-			gWI_score -= diff
+			gWI_score = Math.abs(gWI_score - diff)
+			do_reparation(`greenWI ${get_entrie_names(superLargeEntries)} too large`, gWI_score)
 			gWI_size -= size
 		}
 		wibook_entries = wibook_entries.filter(_ => !superLargeEntries.includes(_))
@@ -203,14 +205,16 @@ export function char_grader(arg, progress_stream = console.log) {
 		...(charData?.alternate_greetings || []),
 		...(charData?.extensions?.group_greetings || []),
 	].filter(_ => _?.length).join('\n')
-	let compressed = compressToUTF16(gzip_text)
-	let compress_ratio = compressed.length / gzip_text.length
-	score_details.score *= compress_ratio
-	score_details.logs.push({
-		type: 'compress_ratio',
-		scale: compress_ratio
-	})
-	progress_stream(`compress_ratio: ${compress_ratio}, all scores scaled as ${compress_ratio}.`)
+	if (gzip_text.length) { // wtf
+		let compressed = compressToUTF16(gzip_text)
+		let compress_ratio = compressed.length / gzip_text.length
+		score_details.score *= compress_ratio
+		score_details.logs.push({
+			type: 'compress_ratio',
+			scale: compress_ratio
+		})
+		progress_stream(`compress_ratio: ${compress_ratio}, all scores scaled as ${compress_ratio}.`)
+	}
 
 	if (cardsize) {
 		let cardsizeMB = cardsize / 1024 / 1024
@@ -224,7 +228,7 @@ export function char_grader(arg, progress_stream = console.log) {
 		_ => (!_.match(/http|Discord|GitHub|类脑|Telegram|社区/i)) && _.trim().length
 	).join('\n')
 	if (cleard_creatorcomment)
-		BaseGrading('creatorcomment', cleard_creatorcomment.length, 'bytes', 1 / 125, 5)
+		BaseGrading('creatorcomment', encoder.encode(cleard_creatorcomment).length, 'bytes', 1 / 125, 5)
 	else {
 		let diff = -50
 		score_details.score += diff
