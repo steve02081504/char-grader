@@ -24,7 +24,7 @@ export function char_grader(arg, progress_stream = console.log) {
 		cardsize = arg.byteLength
 		arg = read(arg);
 	}
-	if (Object(arg) instanceof String) arg = JSON.parse(arg);
+	if (Object(arg) instanceof String) arg = JSON.parse(arg.replace(/\r\n/g, '\n'));
 	/** @type {import('./charData.mjs').v1CharData} */
 	let json = arg
 	var score_details = {
@@ -68,16 +68,19 @@ export function char_grader(arg, progress_stream = console.log) {
 		format_text += json.data.character_book.entries.filter(_ => _.constant).map(_ => _.content).join('\n')
 	}
 	progress_stream("Grading...")
-	function BaseGradingByTokenSize(title, str_array, scale = 1) {
-		let size = get_token_size(str_array)
-		let score = size * scale
-		score_details.score += size * scale
-		progress_stream(`${title}: ${size} tokens, ${score} scores.`)
+	function BaseGrading(title, data, data_type = 'tokens', scale = 1, base_score = 0, pow = 1) {
+		let score = Math.pow(data, pow) * scale + base_score
+		score_details.score += score
+		progress_stream(`${title}: ${data} ${data_type}, ${score} scores.`)
 		score_details.logs.push({
 			type: title,
 			score: score
 		})
-		return size
+		return data
+	}
+	function BaseGradingByTokenSize(title, str_array, scale = 1, base_score = 0, pow = 1) {
+		let size = get_token_size(str_array)
+		return BaseGrading(title, size, 'tokens', scale, base_score, pow)
 	}
 	function do_reparation(title, size, scale = 1, reparation_scale = 1 / 1.03) {
 		let diff = Math.pow(size, reparation_scale) * scale
@@ -132,56 +135,29 @@ export function char_grader(arg, progress_stream = console.log) {
 
 	if (json?.data?.character_book?.entries) {
 		let wibook_entries = json.data.character_book.entries.filter(_ => !_.constant)
-		score_details.score += wibook_entries.length * 5
-		score_details.logs.push({
-			type: 'greenWI_entries',
-			score: wibook_entries.length * 5
-		})
-		progress_stream(`greenWI_entries: ${wibook_entries.length} green entries, ${wibook_entries.length * 5} scores.`)
+		BaseGrading('greenWI_entries', wibook_entries.length, 'green entries', 5)
 		let key_array = []
 		for (const entry of wibook_entries) {
 			key_array.push(...entry.keys)
 			key_array.push(...entry.secondary_keys)
 		}
 		let key_num = [...new Set(key_array)].length
-		score_details.score += key_num * 2
-		score_details.logs.push({
-			type: 'unique_key_num',
-			score: key_num * 2
-		})
-		progress_stream(`unique_key_num: ${key_num} unique keys, ${key_num * 2} scores.`)
+		BaseGrading('unique_key_num', key_num, 'unique keys', 2)
 		key_num = key_array.length - key_num;
-		score_details.score += key_num * 0.4
-		score_details.logs.push({
-			type: 'multi_time_key_num',
-			score: key_num * 0.4
-		})
-		progress_stream(`multi_time_key_num: ${key_num} multi time keys, ${key_num * 0.4} scores.`)
-		BaseGradingByTokenSize("greenWI_total_token_size", wibook_entries.map(_ => _.content), 0.6)
+		BaseGrading('multi_time_key_num', key_num, 'multi time keys', 0.4)
+		BaseGradingByTokenSize("greenWI_total_token_size", wibook_entries.map(_ => _.content), 1, 20, 1 / 1.15)
 
 		let superLargeEntries = wibook_entries.filter(_ => _?.content?.length > 2710)
 		if (superLargeEntries.length > 0) {
 			let size = superLargeEntries.map(_ => _.content.length).reduce((a, b) => a + b)
 			let entrie_names = superLargeEntries.map(_ => _.comment).filter(_ => _).join(', ')
-			do_reparation(`greenWI ${entrie_names}`, size, 0.6)
+			do_reparation(`greenWI ${entrie_names}`, Math.pow(size, 1 / 1.15), 1)
 		}
 	}
-	if (charData?.alternate_greetings) {
-		score_details.score += charData.alternate_greetings.length * 30
-		score_details.logs.push({
-			type: 'alternate_greetings',
-			score: charData.alternate_greetings.length * 30
-		})
-		progress_stream(`alternate_greetings: ${charData.alternate_greetings.length} alternate greetings, ${charData.alternate_greetings.length * 30} scores.`)
-	}
-	if (charData?.extensions?.group_greetings) {
-		score_details.score += charData.extensions.group_greetings.length * 20
-		score_details.logs.push({
-			type: 'group_greetings',
-			score: charData.extensions.group_greetings.length * 20
-		})
-		progress_stream(`group_greetings: ${charData.extensions.group_greetings.length} group greetings, ${charData.extensions.group_greetings.length * 20} scores.`)
-	}
+	if (charData?.alternate_greetings)
+		BaseGrading('alternate_greetings', charData.alternate_greetings.length, 'alternate greetings', 30)
+	if (charData?.extensions?.group_greetings?.length)
+		BaseGrading('group_greetings', charData.extensions.group_greetings.length, 'group greetings', 20)
 	// 通过gzip压缩人物数据来得知数据冗余度，比较压缩率来同步缩放分数
 	let gzip_text = [
 		json.description, json.mes_example,
@@ -203,11 +179,7 @@ export function char_grader(arg, progress_stream = console.log) {
 	if (cardsize) {
 		let cardsizeMB = cardsize / 1024 / 1024
 		score_details.score += cardsizeMB
-		score_details.logs.push({
-			type: 'card size',
-			score: cardsizeMB
-		})
-		progress_stream(`card size: ${cardsize} bytes, ${cardsizeMB} scores.`)
+		BaseGrading('card size', cardsizeMB, 'MB', 0.5)
 		if (cardsizeMB > 100)
 			do_reparation('card size', cardsizeMB)
 	}
@@ -218,15 +190,8 @@ export function char_grader(arg, progress_stream = console.log) {
 			_.includes('类脑') || _.includes('Telegram') || _.includes('社区')
 		) && _.trim().length
 	).join('\n')
-	if (cleard_creatorcomment) {
-		let score = 5 + json.creatorcomment.length / 125
-		score_details.score += score
-		score_details.logs.push({
-			type: 'creatorcomment',
-			score: score
-		})
-		progress_stream(`creatorcomment: ${json.creatorcomment.length} bytes, ${score} scores.`)
-	}
+	if (cleard_creatorcomment)
+		BaseGrading('creatorcomment', cleard_creatorcomment.length, 'bytes', 1 / 125, 5)
 	else {
 		let diff = -50
 		score_details.score += diff
@@ -242,16 +207,10 @@ export function char_grader(arg, progress_stream = console.log) {
 			_.includes('、') || _.includes('·') || _.includes('，') || _.includes('\\') || _.includes('/')
 		) && _.trim().length
 	)
-	if (cleard_tags?.length) {
-		score_details.score += json.tags.length * 3
-		score_details.logs.push({
-			type: 'tags',
-			score: json.tags.length * 3
-		})
-		progress_stream(`tags: ${json.tags.length} tags, ${json.tags.length * 3} scores.`)
-	}
+	if (cleard_tags?.length)
+		BaseGrading('tags', cleard_tags.length, 'tags', 3)
 	else {
-		let diff = -5
+		let diff = -7
 		score_details.score += diff
 		score_details.logs.push({
 			type: 'tags not found',
