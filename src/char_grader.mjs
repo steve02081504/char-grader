@@ -159,12 +159,21 @@ export function char_grader(arg, progress_stream = console.log) {
 			let matched = str.replace(quoted_regex, '').match(related_regex)
 			return matched?.length > 1
 		}
+		function get_entrie_names(entries) {
+			let named_entries = entries.filter(_ => _.comment && !_.tanji)
+			let no_name_len = entries.length - named_entries.length
+			let aret = named_entries.map(_ => _.comment).join(', ')
+			if (no_name_len) {
+				if (aret) aret += `and`
+				aret += `${no_name_len} unnamed entrie${no_name_len > 1 ? 's' : ''}`
+			}
+			return aret
+		}
 		let unrelated_entries = wibook_entries.filter(_ => _?.content?.length > 27 && !is_related(_.content))
 		if (unrelated_entries.length > 0) {
 			let size = get_token_size(unrelated_entries.map(_ => _.content))
-			let entrie_names = unrelated_entries.map(_ => _.comment).filter(_ => _).join(', ')
 			let diff = Math.pow(gWI_size - size, 1 / 1.15)
-			do_reparation(`greenWI ${entrie_names} not directly related to ${json.name} or user`, gWI_score - diff, 1, 1.03)
+			do_reparation(`greenWI ${get_entrie_names(unrelated_entries)} not directly related to ${json.name} or user`, gWI_score - diff, 1, 1.03)
 			gWI_score -= diff
 			gWI_size -= size
 		}
@@ -174,9 +183,8 @@ export function char_grader(arg, progress_stream = console.log) {
 		let superLargeEntries = wibook_entries.filter(_ => _?.content?.length > 2710)
 		if (superLargeEntries.length > 0) {
 			let size = get_token_size(superLargeEntries.map(_ => _.content))
-			let entrie_names = superLargeEntries.map(_ => _.comment).filter(_ => _).join(', ')
 			let diff = Math.pow(gWI_size - size, 1 / 1.15)
-			do_reparation(`greenWI ${entrie_names} too large`, gWI_score - diff)
+			do_reparation(`greenWI ${get_entrie_names(superLargeEntries)} too large`, gWI_score - diff)
 			gWI_score -= diff
 			gWI_size -= size
 		}
