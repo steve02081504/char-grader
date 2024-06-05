@@ -26,29 +26,29 @@ export function char_grader(arg, progress_stream = console.log) {
 	}
 	if (Object(arg) instanceof String) arg = JSON.parse(arg.replace(/\\r\\n/g, '\\n'));
 	/** @type {import('./charData.mjs').v1CharData} */
-	let json = arg
+	let char = arg
 	var score_details = {
-		name: json.name,
-		tags: json?.tags || [],
-		index: json?.creatorcomment,
+		name: char.name,
+		tags: char?.tags || [],
+		index: char?.creatorcomment,
 		logs: [],
 		score: 0
 	}
 	progress_stream("Removeing useless datas...")
-	json = remove_simple_marcos(json)
-	let format_text = json.description
-	if (json?.data?.character_book?.entries) {
-		json.data.character_book.entries = json.data.character_book.entries.filter(_ => _.keys !== undefined)
-		for (const entry of json.data.character_book.entries) {
+	char = remove_simple_marcos(char)
+	let format_text = char.description
+	if (char?.data?.character_book?.entries) {
+		char.data.character_book.entries = char.data.character_book.entries.filter(_ => _.keys !== undefined)
+		for (const entry of char.data.character_book.entries) {
 			entry.keys = entry.keys.filter(_ => _.length > 0).sort()
 			entry.secondary_keys = entry.secondary_keys.filter(_ => _.length > 0).sort()
 			if (!entry.constant && !entry.keys.length) entry.enabled = false
 		}
-		json.data.character_book.entries = json.data.character_book.entries.filter(_ => _.enabled && _.content).sort((a, b) => a.insertion_order - b.insertion_order)
+		char.data.character_book.entries = char.data.character_book.entries.filter(_ => _.enabled && _.content).sort((a, b) => a.insertion_order - b.insertion_order)
 		progress_stream("Marging WI data...")
 		let new_book = []
 		let index = 0
-		for (const entry of json.data.character_book.entries) {
+		for (const entry of char.data.character_book.entries) {
 			let last_entry = new_book[index - 1]
 			if (
 				last_entry &&
@@ -64,8 +64,8 @@ export function char_grader(arg, progress_stream = console.log) {
 				index++
 			}
 		}
-		json.data.character_book.entries = new_book
-		format_text += json.data.character_book.entries.filter(_ => _.constant).map(_ => _.content).join('\n')
+		char.data.character_book.entries = new_book
+		format_text += char.data.character_book.entries.filter(_ => _.constant).map(_ => _.content).join('\n')
 	}
 	progress_stream("Grading...")
 	function BaseGrading(title, data, data_type = 'tokens', scale = 1, base_score = 0, pow = 1) {
@@ -104,16 +104,16 @@ export function char_grader(arg, progress_stream = console.log) {
 	GradingByTokenSize('description & constant WI infos', [
 		format_text
 	], 1, 9037)
-	json.mes_example = json.mes_example || ""
-	json.mes_example = json.mes_example.split(/<START>/i)
-	BaseGradingByTokenSize('mes_example', json.mes_example, 0.65)
-	let superLargeMes = json.mes_example.filter(_ => encoder.encode(_).length > 2500)
+	char.mes_example = char.mes_example || ""
+	char.mes_example = char.mes_example.split(/<START>/i)
+	BaseGradingByTokenSize('mes_example', char.mes_example, 0.65)
+	let superLargeMes = char.mes_example.filter(_ => encoder.encode(_).length > 2500)
 	if (superLargeMes.length)
 		do_reparation('some mes_example is too large', superLargeMes.map(_ => encoder.encode(_).length).reduce((a, b) => a + b), 0.65)
 	GradingByTokenSize('personality & scenario', [
-		json.personality, json.scenario
+		char.personality, char.scenario
 	], 0.5)
-	let charData = json.data
+	let charData = char.data
 	GradingByTokenSize('system_prompt & depth_prompt', [
 		charData?.system_prompt, charData?.extensions?.depth_prompt?.prompt
 	], 0.3)
@@ -136,30 +136,32 @@ export function char_grader(arg, progress_stream = console.log) {
 		}
 	}
 
-	if (json?.data?.character_book?.entries) {
-		let wibook_entries = json.data.character_book.entries.filter(_ => !_.constant)
+	if (char?.data?.character_book?.entries) {
+		let wibook_entries = char.data.character_book.entries.filter(_ => !_.constant)
 		BaseGrading('greenWI_entries', wibook_entries.length, 'green entries', 5)
 		let key_array = []
-		for (const entry of wibook_entries) {
+		for (let entry of wibook_entries) {
 			key_array.push(...entry.keys)
 			key_array.push(...entry.secondary_keys)
+			entry.tokenized_content = encoder.encode(entry.content)
 		}
 		let key_num = [...new Set(key_array)].length
 		BaseGrading('unique_key_num', key_num, 'unique keys', 2)
 		key_num = key_array.length - key_num;
 		BaseGrading('multi_time_key_num', key_num, 'multi time keys', 0.4)
-		let gWI_size = get_token_size(wibook_entries.map(_ => _.content))
+		let gWI_size = wibook_entries.map(_ => _.tokenized_content.length).reduce((a, b) => a + b)
 		let gWI_score = Math.pow(gWI_size, 1 / 1.15)
 		BaseGrading("greenWI_total_token_size", gWI_size, "token size", 1, 20, 1 / 1.15)
 
 		let related_names = [
-			json.name, 'char', 'user', '你'
+			char.name, 'char', 'user', '你'
 		]
 		let related_regex = new RegExp(`(${related_names.join('|')})`, 'g')
 		let quoted_regex = /(\"[^\"]+\")|([\”\“][^\”\“]+[\”\“])/g
-		function is_related(str) {
+		function is_related(entry) {
+			let str = entry.content
 			let matched = str.replace(quoted_regex, '').match(related_regex)
-			return matched?.length > 1
+			return matched?.length > entry.tokenized_content.length / 201
 		}
 		function get_entrie_names(entries) {
 			let named_entries = entries.filter(_ => _.comment && !_.tanji)
@@ -171,20 +173,20 @@ export function char_grader(arg, progress_stream = console.log) {
 			}
 			return aret
 		}
-		let unrelated_entries = wibook_entries.filter(_ => _?.content?.length > 27 && !is_related(_.content))
+		let unrelated_entries = wibook_entries.filter(_ => _.tokenized_content.length > 27 && !is_related(_))
 		if (unrelated_entries.length > 0) {
-			let size = get_token_size(unrelated_entries.map(_ => _.content))
+			let size = unrelated_entries.map(_ => _.tokenized_content.length).reduce((a, b) => a + b)
 			let diff = Math.pow(gWI_size - size, 1 / 1.15)
 			gWI_score = Math.abs(gWI_score - diff)
-			do_reparation(`greenWI ${get_entrie_names(unrelated_entries)} not directly related to ${json.name} or user`, gWI_score, 1, 1.03)
+			do_reparation(`greenWI ${get_entrie_names(unrelated_entries)} not directly related to ${char.name} or user`, gWI_score, 1, 1.03)
 			gWI_size -= size
 		}
 		wibook_entries = wibook_entries.filter(_ => !unrelated_entries.includes(_))
-		json.data.character_book.entries = wibook_entries
+		char.data.character_book.entries = wibook_entries
 
-		let superLargeEntries = wibook_entries.filter(_ => encoder.encode(_?.content).length > 2710)
+		let superLargeEntries = wibook_entries.filter(_ => _.tokenized_content.length > 2710)
 		if (superLargeEntries.length > 0) {
-			let size = get_token_size(superLargeEntries.map(_ => _.content))
+			let size = superLargeEntries.map(_ => _.tokenized_content.length).reduce((a, b) => a + b)
 			let diff = Math.pow(gWI_size - size, 1 / 1.15)
 			gWI_score = Math.abs(gWI_score - diff)
 			do_reparation(`greenWI ${get_entrie_names(superLargeEntries)} too large`, gWI_score)
@@ -198,10 +200,10 @@ export function char_grader(arg, progress_stream = console.log) {
 		BaseGrading('group_greetings', charData.extensions.group_greetings.length, 'group greetings', 20)
 	// 通过gzip压缩人物数据来得知数据冗余度，比较压缩率来同步缩放分数
 	let gzip_text = [
-		json.description, json.mes_example,
-		json.personality, json.scenario,
+		char.description, char.mes_example,
+		char.personality, char.scenario,
 		charData?.system_prompt, charData?.extensions?.depth_prompt?.prompt,
-		...(json?.data?.character_book?.entries?.map?.(_ => _.content) || []),
+		...(char?.data?.character_book?.entries?.map?.(_ => _.content) || []),
 		...(charData?.alternate_greetings || []),
 		...(charData?.extensions?.group_greetings || []),
 	].filter(_ => _?.length).join('\n')
@@ -223,8 +225,8 @@ export function char_grader(arg, progress_stream = console.log) {
 		if (cardsizeMB > 100)
 			do_reparation('card size too large', cardsizeMB)
 	}
-	json.creatorcomment = json.creatorcomment || ""
-	let cleard_creatorcomment = json.creatorcomment.split('\n').filter(
+	char.creatorcomment = char.creatorcomment || ""
+	let cleard_creatorcomment = char.creatorcomment.split('\n').filter(
 		_ => (!_.match(/http|Discord|GitHub|类脑|Telegram|社区/i)) && _.trim().length
 	).join('\n')
 	if (cleard_creatorcomment)
@@ -238,8 +240,8 @@ export function char_grader(arg, progress_stream = console.log) {
 		})
 		progress_stream(`creatorcomment not found: ${diff} scores.`)
 	}
-	json.tags = json.tags || []
-	let cleard_tags = json.tags.filter(
+	char.tags = char.tags || []
+	let cleard_tags = char.tags.filter(
 		_ => (!_.match(/、|·|，|\\|\//g)) && _.trim().length
 	)
 	if (cleard_tags?.length)
