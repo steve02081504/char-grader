@@ -101,6 +101,7 @@ export function char_grader(arg, progress_stream = console.log) {
 			do_reparation(title + ' too large', size, scale, reparation_scale)
 		return size
 	}
+	let format_text_length = encoder.encode(format_text).length
 	GradingByTokenSize('description & constant WI infos', [
 		format_text
 	], 1, 9037)
@@ -118,21 +119,34 @@ export function char_grader(arg, progress_stream = console.log) {
 		charData?.system_prompt, charData?.extensions?.depth_prompt?.prompt
 	], 0.3)
 	if (format_text.includes('\n    ') || format_text.includes('\n\t\t')) {
-		let format_name = ''
 		let yaml_score = format_text.match(/\n\s+-\s*\S/g)?.length
-		let json_score = format_text.match(/\"\,\s*\n/g)?.length + format_text.match(/\{\s*\n/g)?.length
+		let json_score_p1 = format_text.match(/\"\,\s*\n/g)?.length || 0
+		let json_score_p2 = format_text.match(/\{\s*\n/g)?.length || 0
+		let json_score = json_score_p1 + json_score_p2
 		let xml_score = format_text.match(/<([^>]*)>[^<]*<(\/|\\)\1>/g)?.length
-		if (yaml_score >= json_score && yaml_score >= xml_score) format_name = 'yaml'
-		else if (json_score >= yaml_score && json_score >= xml_score) format_name = 'json'
-		else if (xml_score >= json_score && xml_score >= yaml_score) format_name = 'xml'
-		if (format_name) {
-			let scale = format_name === 'json' ? 0.6 : 0.8
+		let format_str = ''
+		let all_score = yaml_score + json_score + xml_score
+		if (yaml_score) {
+			format_str += 'yaml'
+			if (yaml_score != all_score) format_str += `(${yaml_score / all_score});`
+		}
+		if (json_score) {
+			format_str += 'json'
+			if (json_score != all_score) format_str += `(${json_score / all_score});`
+		}
+		if (xml_score) {
+			format_str += 'xml'
+			if (xml_score != all_score) format_str += `(${xml_score / all_score});`
+		}
+		if (format_str) {
+			format_str = format_str.split(';').filter(_ => _).join('; ')
+			let scale = 1 - (json_score * 50 + xml_score * 20 + yaml_score * 40) / format_text_length
 			score_details.score *= scale
 			score_details.logs.push({
-				type: `format: ${format_name}`,
+				type: `format: ${format_str}`,
 				scale: scale
 			})
-			progress_stream(`format: ${format_name}, all scores reduced as scale ${scale}.`)
+			progress_stream(`[reparation] format: ${format_str}, all scores reduced as scale ${scale}.`)
 		}
 	}
 
@@ -141,7 +155,7 @@ export function char_grader(arg, progress_stream = console.log) {
 	]
 	let related_regex = new RegExp(`(${related_names.join('|')})`, 'g')
 	let is_persona_card_x = format_text.match(related_regex)?.length
-	let is_persona_card_y = encoder.encode(format_text).length / 97
+	let is_persona_card_y = format_text_length / 97
 	let is_persona_card = is_persona_card_x >= is_persona_card_y
 	progress_stream(`[info] ${char.name} is ${is_persona_card ? '' : 'not '} a persona card: x=${is_persona_card_x}, y=${is_persona_card_y}`)
 
