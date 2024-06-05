@@ -136,8 +136,17 @@ export function char_grader(arg, progress_stream = console.log) {
 		}
 	}
 
-	if (char?.data?.character_book?.entries) {
-		let wibook_entries = char.data.character_book.entries.filter(_ => !_.constant)
+	let related_names = [
+		char.name, 'char', 'user', '你'
+	]
+	let related_regex = new RegExp(`(${related_names.join('|')})`, 'g')
+	let is_persona_card_x = format_text.match(related_regex)?.length
+	let is_persona_card_y = encoder.encode(format_text).length / 97
+	let is_persona_card = is_persona_card_x >= is_persona_card_y
+	progress_stream(`[info] ${char.name} is ${is_persona_card ? '' : 'not '} a persona card: x=${is_persona_card_x}, y=${is_persona_card_y}`)
+
+	let wibook_entries = char?.data?.character_book?.entries?.filter?.(_ => !_.constant)
+	wi_grading: if (wibook_entries?.length) {
 		BaseGrading('greenWI_entries', wibook_entries.length, 'green entries', 5)
 		let key_array = []
 		for (let entry of wibook_entries) {
@@ -153,10 +162,6 @@ export function char_grader(arg, progress_stream = console.log) {
 		let gWI_score = Math.pow(gWI_size, 1 / 1.15)
 		BaseGrading("greenWI_total_token_size", gWI_size, "token size", 1, 20, 1 / 1.15)
 
-		let related_names = [
-			char.name, 'char', 'user', '你'
-		]
-		let related_regex = new RegExp(`(${related_names.join('|')})`, 'g')
 		let quoted_regex = /(\"[^\"]+\")|([\”\“][^\”\“]+[\”\“])/g
 		function is_related(entry) {
 			let str = entry.content
@@ -174,17 +179,23 @@ export function char_grader(arg, progress_stream = console.log) {
 			return aret
 		}
 		let unrelated_entries = wibook_entries.filter(_ => _.tokenized_content.length > 27 && !is_related(_))
-		if (unrelated_entries.length > 0) {
-			let size = unrelated_entries.map(_ => _.tokenized_content.length).reduce((a, b) => a + b)
-			let diff = Math.pow(gWI_size - size, 1 / 1.15)
-			gWI_score = Math.abs(gWI_score - diff)
-			do_reparation(`greenWI ${get_entrie_names(unrelated_entries)} not directly related to ${char.name} or user`, gWI_score, 1, 1.03)
-			gWI_size -= size
+		if (is_persona_card && unrelated_entries.length / wibook_entries.length >= 0.7) {
+			do_reparation('greenWI too much unrelated entries', gWI_score, 1.4, 1)
+			break wi_grading
 		}
-		wibook_entries = wibook_entries.filter(_ => !unrelated_entries.includes(_))
-		char.data.character_book.entries = wibook_entries
+		if (is_persona_card) {
+			if (unrelated_entries.length > 0) {
+				let size = unrelated_entries.map(_ => _.tokenized_content.length).reduce((a, b) => a + b)
+				let diff = Math.pow(gWI_size - size, 1 / 1.15)
+				gWI_score = Math.abs(gWI_score - diff)
+				do_reparation(`greenWI ${get_entrie_names(unrelated_entries)} not directly related to ${char.name} or user`, gWI_score)
+				gWI_size -= size
+			}
+			wibook_entries = wibook_entries.filter(_ => !unrelated_entries.includes(_))
+			char.data.character_book.entries = wibook_entries
+		}
 
-		let superLargeEntries = wibook_entries.filter(_ => _.tokenized_content.length > 2710)
+		let superLargeEntries = wibook_entries.filter(_ => _.tokenized_content.length > 2310)
 		if (superLargeEntries.length > 0) {
 			let size = superLargeEntries.map(_ => _.tokenized_content.length).reduce((a, b) => a + b)
 			let diff = Math.pow(gWI_size - size, 1 / 1.15)

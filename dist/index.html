@@ -121,8 +121,10 @@
 			scoreElement.innerHTML += '<br>Score: ' + score_details.score
 		}
 
-		function displayLogs(logs) {
-			logsElement.innerHTML += "<br>" + logs;
+		function displayLogs(log) {
+			if (log.startsWith('[reparation] ')) log = `<font color="magenta">${log}</font>`
+			if (log.startsWith('[info] ')) log = `<font color="green">${log}</font>`
+			logsElement.innerHTML += "<br>" + log;
 		}
 	</script>
 </body>
