@@ -157,6 +157,8 @@ export function char_grader(arg, progress_stream = console.log) {
 	]
 	let related_regex = new RegExp(`(${related_names.join('|')})`, 'g')
 	let is_persona_card_x = format_text.match(related_regex)?.length
+	if (format_text.includes('not a specific character, but an Role Play Game system'))
+		is_persona_card_x /= 6
 	let is_persona_card_y = format_text_length / 97
 	let is_persona_card = is_persona_card_x >= is_persona_card_y
 	progress_stream(`[info] ${char.name} is ${is_persona_card ? '' : 'not '} a persona card: x=${is_persona_card_x}, y=${is_persona_card_y}`)
