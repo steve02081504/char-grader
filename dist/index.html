@@ -131,8 +131,13 @@
 		}
 
 		function displayLogs(log) {
+			log = log.replace(/that\'s/g, 'that is')
+			log = log.replace(/\"([^\"]+)\"/g, '"<font color="blue">$1</font>"')
+			log = log.replace(/\'([^\']+)\'/g, "'<font color=\"blue\">$1</font>'")
+			log = log.replace(/that is/g, 'that\'s')
 			if (log.startsWith('[reparation] ')) log = `<font color="magenta">${log}</font>`
 			if (log.startsWith('[info] ')) log = `<font color="green">${log}</font>`
+			if (log.startsWith('[warning] ')) log = `<font color="orange">${log}</font>`
 			logsElement.innerHTML += "<br>" + log;
 		}
 	</script>

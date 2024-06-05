@@ -141,7 +141,7 @@ export function char_grader(arg, progress_stream = console.log) {
 		if (format_str) {
 			format_str = format_str.split(';').filter(_ => _).join('; ')
 			let format_scale = (json_score * 4 + xml_score * 1.7 + yaml_score * 3.2) / format_text_length * 10
-			while(format_scale > 1) format_scale /= 10
+			while (format_scale > 1) format_scale /= 10
 			let scale = 1 - Math.min(format_scale, 0.72)
 			score_details.score *= scale
 			score_details.logs.push({
@@ -165,27 +165,6 @@ export function char_grader(arg, progress_stream = console.log) {
 
 	let wibook_entries = char?.data?.character_book?.entries?.filter?.(_ => !_.constant)
 	wi_grading: if (wibook_entries?.length) {
-		BaseGrading('greenWI_entries', wibook_entries.length, 'green entries', 5)
-		let key_array = []
-		for (let entry of wibook_entries) {
-			key_array.push(...entry.keys)
-			key_array.push(...entry.secondary_keys)
-			entry.tokenized_content = encoder.encode(entry.content)
-		}
-		let key_num = [...new Set(key_array)].length
-		BaseGrading('unique_key_num', key_num, 'unique keys', 2)
-		key_num = key_array.length - key_num;
-		BaseGrading('multi_time_key_num', key_num, 'multi time keys', 0.4)
-		let gWI_size = wibook_entries.map(_ => _.tokenized_content.length).reduce((a, b) => a + b)
-		let gWI_score = Math.pow(gWI_size, 1 / 1.15)
-		BaseGrading("greenWI_total_token_size", gWI_size, "token size", 1, 20, 1 / 1.15)
-
-		let quoted_regex = /(\"[^\"]+\")|([\”\“][^\”\“]+[\”\“])/g
-		function is_related(entry) {
-			let str = entry.content
-			let matched = str.replace(quoted_regex, '').match(related_regex)
-			return matched?.length > entry.tokenized_content.length / 201
-		}
 		function get_entrie_names(entries) {
 			let named_entries = entries.filter(_ => _.comment && !_.tanji)
 			let no_name_len = entries.length - named_entries.length
@@ -195,6 +174,38 @@ export function char_grader(arg, progress_stream = console.log) {
 				aret += `${no_name_len} unnamed entrie${no_name_len > 1 ? 's' : ''}`
 			}
 			return aret
+		}
+		BaseGrading('greenWI_entries', wibook_entries.length, 'green entries', 5)
+		let key_array = []
+		for (let entry of wibook_entries) {
+			key_array.push(...entry.keys)
+			key_array.push(...entry.secondary_keys)
+			let warning_keys = []
+			if (entry.extensions.match_whole_words !== false)
+				for (let key of [...entry.keys, ...entry.secondary_keys])
+					if (/\p{Unified_Ideograph}/u.test(key))
+						warning_keys.push(key)
+			if (warning_keys.length)
+				progress_stream(`[warning] the key${warning_keys.length > 1 ? 's' : ''} '${warning_keys.join("', '")}' of WI entry '${get_entrie_names([entry])}' contains Chinese like character, but match_whole_words is not false, that's may not be what you want.`)
+			entry.tokenized_content = encoder.encode(entry.content)
+		}
+		let unique_keys = [...new Set(key_array)]
+		let key_num = unique_keys.length
+		BaseGrading('unique_key_num', key_num, 'unique keys', 2)
+		key_num = key_array.length - key_num;
+		BaseGrading('multi_time_key_num', key_num, 'multi time keys', 0.4)
+		for (let key of unique_keys)
+			if (key.match(/、|，/gi))
+				progress_stream(`[warning] the key '${key}' contains '、' or '，', that's may not be what you want, use ',' instead?`)
+		let gWI_size = wibook_entries.map(_ => _.tokenized_content.length).reduce((a, b) => a + b)
+		let gWI_score = Math.pow(gWI_size, 1 / 1.15)
+		BaseGrading("greenWI_total_token_size", gWI_size, "token size", 1, 20, 1 / 1.15)
+
+		let quoted_regex = /(\"[^\"]+\")|([\”\“][^\”\“]+[\”\“])/g
+		function is_related(entry) {
+			let str = entry.content
+			let matched = str.replace(quoted_regex, '').match(related_regex)
+			return matched?.length > entry.tokenized_content.length / 201
 		}
 		let unrelated_entries = wibook_entries.filter(_ => _.tokenized_content.length > 27 && !is_related(_))
 		if (is_persona_card && unrelated_entries.length / wibook_entries.length >= 0.7) {
