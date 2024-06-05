@@ -191,7 +191,7 @@ export function char_grader(arg, progress_stream = console.log) {
 		}
 		let unique_keys = [...new Set(key_array)]
 		let key_num = unique_keys.length
-		BaseGrading('unique_key_num', key_num, 'unique keys', 2)
+		BaseGrading('unique_key_num', key_num, 'unique keys', 2, 0, 1 / 1.15)
 		key_num = key_array.length - key_num;
 		BaseGrading('multi_time_key_num', key_num, 'multi time keys', 0.4)
 		for (let key of unique_keys)
