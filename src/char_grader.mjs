@@ -140,7 +140,9 @@ export function char_grader(arg, progress_stream = console.log) {
 		}
 		if (format_str) {
 			format_str = format_str.split(';').filter(_ => _).join('; ')
-			let scale = 1 - (json_score * 40 + xml_score * 17 + yaml_score * 32) / format_text_length
+			let format_scale = (json_score * 4 + xml_score * 1.7 + yaml_score * 3.2) / format_text_length * 10
+			while(format_scale > 1) format_scale /= 10
+			let scale = 1 - Math.min(format_scale, 0.72)
 			score_details.score *= scale
 			score_details.logs.push({
 				type: `format: ${format_str}`,
