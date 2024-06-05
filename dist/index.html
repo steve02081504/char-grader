@@ -114,10 +114,19 @@
 			handleFileSelect({ target: event.dataTransfer });
 		}
 
+		let red_tags = /^(furry|福瑞|r18g|18g|ntr|ntl|牛头人|寝取り|寝取)$/gi
+		let green_tags = /^(loli|萝莉|幼女|孩童|乱伦)$/gi
+		let yellow_tags = /^(nsfw|hentai)$/gi
+		function TagColorAdder(Tag) {
+			if (red_tags.test(Tag)) return `<font color="red">${Tag}</font>`
+			if (green_tags.test(Tag)) return `<font color="green">${Tag}</font>`
+			if (yellow_tags.test(Tag)) return `<font color="yellow">${Tag}</font>`
+			return Tag
+		}
 		function displayScore(score_details) {
 			scoreElement.innerHTML = "Name: " + score_details.name
 			if (score_details.tags.length)
-				scoreElement.innerHTML += '<br>Tags: ' + score_details.tags.join(', ')
+				scoreElement.innerHTML += '<br>Tags: ' + score_details.tags.map(TagColorAdder).join(', ')
 			scoreElement.innerHTML += '<br>Score: ' + score_details.score
 		}
 
