@@ -178,6 +178,8 @@ export function char_grader(arg, progress_stream = console.log) {
 		BaseGrading('greenWI_entries', wibook_entries.length, 'green entries', 5)
 		let key_array = []
 		for (let entry of wibook_entries) {
+			entry.keys = [...new Set(entry.keys)]
+			entry.secondary_keys = [...new Set(entry.secondary_keys)]
 			key_array.push(...entry.keys)
 			key_array.push(...entry.secondary_keys)
 			let warning_keys = []
