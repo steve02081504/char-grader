@@ -185,8 +185,12 @@ export function char_grader(arg, progress_stream = console.log) {
 				for (let key of [...entry.keys, ...entry.secondary_keys])
 					if (/\p{Unified_Ideograph}/u.test(key))
 						warning_keys.push(key)
+			let entry_name = get_entrie_names([entry])
 			if (warning_keys.length)
-				progress_stream(`[warning] the key${warning_keys.length > 1 ? 's' : ''} '${warning_keys.join("', '")}' of WI entry '${get_entrie_names([entry])}' contains Chinese like character, but match_whole_words is not false, that's may not be what you want.`)
+				progress_stream(`[warning] the key${warning_keys.length > 1 ? 's' : ''} '${warning_keys.join("', '")}' of WI entry '${entry_name}' contains Chinese like character, but match_whole_words is not false, that's may not be what you want.`)
+			let is_LN = !/$<-(<WI(推理节点|推理節點|LogicalNode)(：|:)([\\s\\S]+?)>|[0-9a-z]{6})->\s*^/g.test(entry.content)
+			if (!entry.extensions.prevent_recursion && !is_LN)
+				progress_stream(`[warning] the WI entry '${entry_name}' not an WI LogicalNode and not set prevent_recursion, that's may not be what you want.`)
 			entry.tokenized_content = encoder.encode(entry.content)
 		}
 		let unique_keys = [...new Set(key_array)]
