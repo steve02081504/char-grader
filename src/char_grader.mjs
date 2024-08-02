@@ -288,6 +288,15 @@ export function char_grader(arg, progress_stream = console.log) {
 		})
 		progress_stream(`tags not found: ${diff} scores.`)
 	}
+	if (char.data.character_version.length > 13) {
+		let diff = -9
+		score_details.score += diff
+		score_details.logs.push({
+			type: 'character_version too long',
+			score: diff
+		})
+		progress_stream(`character_version too long: ${diff} scores.`)
+	}
 
 	if (is_persona_card) {
 		let content_text = ''
