@@ -260,7 +260,7 @@ export function char_grader(arg, progress_stream = console.log) {
 	}
 	char.creatorcomment = char.creatorcomment || ""
 	let cleard_creatorcomment = char.creatorcomment.split('\n').filter(
-		_ => (!_.match(/http|Discord|GitHub|类脑|Telegram|社区|盈利/i)) && _.trim().length && _ != "Creator's notes go here."
+		_ => (!_.match(/http|Discord|GitHub|类脑|Telegram|社区|盈利|作者/i)) && _.trim().length && _ != "Creator's notes go here."
 	).join('\n')
 	if (cleard_creatorcomment)
 		BaseGrading('creatorcomment', encoder.encode(cleard_creatorcomment).length, 'bytes', 1 / 125, 5)
