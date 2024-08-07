@@ -147,6 +147,12 @@
 			if (score_details.tags.length)
 				scoreElement.innerHTML += '<br>Tags: ' + score_details.tags.map(TagColorAdder).join(', ')
 			scoreElement.innerHTML += '<br>Score: ' + score_details.score
+			if (score_details.video_count > 0) {
+				scoreElement.innerHTML += `<br><font color="blue">Video count: ${score_details.video_count}</font>`
+			}
+			if (score_details.image_count > 0) {
+				scoreElement.innerHTML += `<br><font color="blue">Image count: ${score_details.image_count}</font>`
+			}
 		}
 
 		function displayLogs(log) {

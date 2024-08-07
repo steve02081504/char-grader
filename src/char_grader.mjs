@@ -249,6 +249,41 @@ export function char_grader(arg, progress_stream = console.log) {
 			scale: compress_ratio
 		})
 		progress_stream(`compress_ratio: ${compress_ratio}, all scores scaled as ${compress_ratio}.`)
+		let img_regexs = [
+			/data:image\/png;base64,/ig,
+			/\w+\.(png|jpg|jpeg)/ig
+		]
+		let image_set = new Set()
+		for (let regex of img_regexs) {
+			let imgs = gzip_text.match(regex)
+			if (imgs)
+				for (let img of imgs)
+					image_set.add(img)
+		}
+		let image_count = image_set.size
+		if (image_count > 0) {
+			// 通过png数量来追加分数
+			BaseGrading('image count', image_count, 'pictures', 20, 0, 0.75)
+			score_details.image_count = image_count
+		}
+
+		video_regexs = [
+			/data:video\/mp4;base64,/ig,
+			/\w+\.(mp4|webm|mkv|mov|avi|flv|wmv|mpeg|mpg|3gp)/ig
+		]
+		let video_set = new Set()
+		for (let regex of video_regexs) {
+			let videos = gzip_text.match(regex)
+			if (videos)
+				for (let video of videos)
+					video_set.add(video)
+		}
+		let video_count = video_set.size
+		if (video_count > 0) {
+			// 通过mp4数量来追加分数
+			BaseGrading('video count', video_count, 'videos', 40, 0, 0.80)
+			score_details.video_count = video_count
+		}
 	}
 
 	if (cardsize) {
