@@ -149,7 +149,7 @@ export function char_grader(arg, progress_stream = console.log) {
 		return matched?.length > entry.tokenized_content.length / 201
 	}
 	let is_persona_card_x = format_text.match(related_regex)?.length || 1.8
-	if (format_text.includes('not a specific character, but an Role Play Game system'))
+	if (format_text.includes('not a specific character') || format_text.includes('Role Play Game system'))
 		is_persona_card_x /= 6
 	else if (format_text.split('\n').slice(0, 4).join('\n').match(/\bcharacter\b/))
 		is_persona_card_x *= 1.5
@@ -376,6 +376,11 @@ export function char_grader(arg, progress_stream = console.log) {
 			/(sex|gender|性别)\s*(:|：)\s*"(?<sex>男|女|male|female|woman|man)"/i,
 		], {
 			else_do: () => {
+				if (char.tags.filter(_ => _.match(/^(男性|男性角色|male)$/i)).length)
+					score_details.sex = 'male'
+				else if (char.tags.filter(_ => _.match(/^(女性|女性角色|female)$/i)).length)
+					score_details.sex = 'female'
+				if (score_details.sex) return
 				let male_match_words = 'man,boy,gentleman,him,he,his,Handsome,Abs,Muscle,Brawny,Dick,Fit,Strong,Dashing,Cold,male'.split(',')
 				let male_match_words_chinese = '他的,腹肌,俊美,英俊,腹肌,肌肉,壮硕,大屌,健硕,强壮,潇洒,冷酷,稳重,大方,克制.坚韧,隐忍,包容'.split(',')
 				let female_match_words = 'long hair,woman,girl,milf,she,her,hers,Female,Beautiful,cute,adorable,pretty,delicate,tits,boob,pigeon,plump,flirty,slutty,petite,heartfelt,sweet,sly,pussy,ponytail'.split(',')
