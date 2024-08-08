@@ -19,6 +19,8 @@ export function char_grader(arg, progress_stream = console.log) {
 	if (char.data && !char.description) char = GetV1CharDataFromV2(char.data)
 	var score_details = {
 		name: char.name,
+		version: char?.data?.character_version,
+		creator: char?.data?.creator,
 		tags: char?.tags || [],
 		index: char?.creatorcomment,
 		logs: [],
@@ -170,6 +172,8 @@ export function char_grader(arg, progress_stream = console.log) {
 		}
 		BaseGrading('greenWI_entries', wibook_entries.length, 'green entries', 5)
 		let key_array = []
+		let match_whole_words_missing_num = 0
+		let prevent_recursion_missing_num = 0
 		for (let entry of wibook_entries) {
 			entry.keys = [...new Set(entry.keys)]
 			entry.secondary_keys = [...new Set(entry.secondary_keys)]
@@ -182,12 +186,20 @@ export function char_grader(arg, progress_stream = console.log) {
 					else if (/\p{Unified_Ideograph}/u.test(key))
 						warning_keys.push(key)
 			let entry_name = get_entrie_names([entry])
-			if (warning_keys.length)
+			if (warning_keys.length) {
 				progress_stream(`[warning] the key${warning_keys.length > 1 ? 's' : ''} '${warning_keys.join("', '")}' of WI entry '${entry_name}' contains Chinese like character, but match_whole_words is not false, that's may not be what you want.`)
+				match_whole_words_missing_num++
+			}
 			let is_LN = !/$<-(<WI(推理节点|推理節點|LogicalNode)(：|:)([\\s\\S]+?)>|[0-9a-z]{6})->\s*^/g.test(entry.content)
-			if (!entry.extensions.prevent_recursion && !is_LN)
+			if (!entry.extensions.prevent_recursion && !is_LN) {
 				progress_stream(`[warning] the WI entry '${entry_name}' not an WI LogicalNode and not set prevent_recursion, that's may not be what you want.`)
+				prevent_recursion_missing_num++
+			}
 		}
+		if (match_whole_words_missing_num)
+			do_reparation('match_whole_words missing', match_whole_words_missing_num, 7)
+		if (prevent_recursion_missing_num)
+			do_reparation('prevent_recursion missing', prevent_recursion_missing_num, 7)
 		let unique_keys = [...new Set(key_array)]
 		let key_num = unique_keys.length
 		BaseGrading('unique_key_num', key_num, 'unique keys', 2, 0, 1 / 1.15)
