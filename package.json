@@ -1,0 +1,31 @@
+{
+	"name": "char-grader",
+	"version": "0.0.0",
+	"main": "src/index.mjs",
+	"dependencies": {
+		"@zip.js/zip.js": "latest",
+		"aws-sdk": "^2.1683.0",
+		"buffer": "latest",
+		"llama3-tokenizer-js": "latest",
+		"lz-string": "latest",
+		"node-unrar-js": "latest",
+		"png-chunk-text": "latest",
+		"png-chunks-encode": "latest",
+		"png-chunks-extract": "latest",
+		"showdown": "latest"
+	},
+	"devDependencies": {
+		"@rollup/plugin-commonjs": "latest",
+		"@rollup/plugin-json": "latest",
+		"@rollup/plugin-node-resolve": "latest",
+		"@rollup/plugin-terser": "latest",
+		"rollup": "latest",
+		"rollup-plugin-polyfill-node": "latest"
+	},
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"build": "rollup -c ./src/rollup.config.mjs"
+	},
+	"author": "steve02081504",
+	"description": ""
+}

@@ -1,0 +1,78 @@
+#drop-area {
+	width: 100%;
+	border: 2px dashed #ccc;
+	text-align: center;
+	padding: 20px;
+	font-size: 18px;
+	z-index: 2;
+	cursor: pointer;
+}
+
+#image {
+	max-width: 80%;
+	object-fit: cover;
+}
+
+.text {
+	font-family: monospace;
+}
+
+#details-container {
+	margin-top: 13px;
+}
+
+#tokenized_text {
+	border: 1px solid #ccc;
+}
+
+.hr-for-phone {
+	display: none;
+}
+
+/* 电脑 */
+@media (min-width: 992px) {
+	#container {
+		display: grid;
+		grid-template-columns: 40% 60%;
+		gap: 10px;
+		grid-auto-flow: dense;
+	}
+
+	#drop-area {
+		width: calc(100% - 40px);
+	}
+
+	.text {
+		padding: 30px;
+	}
+}
+
+/* 手机 */
+@media (max-width: 993px) {
+	#drop-area {
+		width: 90%;
+		margin: auto;
+		min-height: 40vh;
+	}
+
+	.text {
+		font-size: larger;
+	}
+
+	#logs:not(:empty) ~ .hr-for-phone {
+		display: block;
+	}
+}
+
+#fullscreen-div {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.5);
+	z-index: 1000;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}

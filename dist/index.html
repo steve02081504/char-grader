@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Char Grader</title>
+	<script src="https://cdn.jsdelivr.net/npm/showdown"></script>
+	<script src="https://cdn.jsdelivr.net/npm/darkreader"></script>
+	<script>
+		DarkReader.setFetchMethod(window.fetch)
+		DarkReader.enable()
+		window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+			if (event.matches) DarkReader.enable()
+			else DarkReader.disable()
+		})
+	</script>
+	<link rel="stylesheet" type="text/css" href="./style.css"/>
+</head>
+
+<body>
+	<div id="fullscreen-div" style="display: none;">Loading Char Data...</div>
+	<input type="file" id="file-input" style="display: none;"
+		accept="image/*, application/json, application/zip, application/x-zip-compressed, application/x-compressed, application/octet-stream, application/x-msdownload"
+		onchange="grader_js.handleFileSelect(event)">
+	<div id="container">
+		<div id="drop-area" ondrop="grader_js.handleDrop(event)" ondragover="event.preventDefault()"
+			onclick="document.getElementById('file-input').click()">
+			Click or Drop char card/zip/rar/link here
+			<br/>
+			<img id="image" />
+		</div>
+
+		<div id="details-container">
+			<div id="score" class="text"></div>
+			<div id="logs" class="text"></div>
+			<button id="copy-link" onclick="alert('load a char first')">Copy Link</button>
+			<hr class="hr-for-phone"/>
+		</div>
+	</div>
+	<div id="cardReadme" class="text"></div>
+	<details style="display: none;" id="content_view">
+		<summary>Content View</summary>
+		<label class="view_switch">
+			<input type="checkbox" id="tokenized_text_switch" onclick="grader_js.toggleTokenizedViewSwitch()">
+			<span>Tokenized View</span>
+		</label>
+		<div id="content_text"></div>
+	</details>
+	<script src="https://cdn.jsdelivr.net/npm/llama3-tokenizer-js/bundle/commonjs-llama3-tokenizer-with-baked-data.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@zip.js/zip.js/dist/zip.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/lz-string/libs/lz-string.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/gh/steve02081504/bundle-cdn/dist/buffer.js"></script>
+	<script src="https://cdn.jsdelivr.net/gh/steve02081504/bundle-cdn/dist/node-unrar-js.js"></script>
+	<script src="https://sdk.amazonaws.com/js/aws-sdk-2.1683.0.min.js"></script>
+	<script src="index.js"></script>
+</body>
+
+</html>
