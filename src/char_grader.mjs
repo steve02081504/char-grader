@@ -584,7 +584,7 @@ export async function char_grader(arg, progress_stream = console.log) {
 			}
 		})
 		regex_prop_finder('cup', [
-			/"?(cup|罩杯|Breast size|BreastSize)"?(:|：|\<\/td\>\s*\<td\>|\(|（)\s*"?(?<cup>([a-z])\4*(\+|-|))"?/i,
+			/"?(cup|罩杯|Breast size|BreastSize|cup_size)"?(:|：|\<\/td\>\s*\<td\>|\(|（)\s*"?(?<cup>([a-z])\4*(\+|-|))"?/i,
 			/\b(?<cup>([a-z])\2*(\+|))-cup\b/i,
 			/\b(?<cup>([a-z])\2*(\+|-|))\s*cup\b/i,
 			/(?<cup>([a-z])\2*(\+|-|))\s*(罩杯|杯)/i
@@ -630,6 +630,7 @@ export async function char_grader(arg, progress_stream = console.log) {
 			/(?<bwh>b(?<b>[\d\.]+)(-|\/)w(?<w>[\d\.]+)(-|\/)h(?<h>[\d\.]+))/i,
 			/"?(bwh|三围|三维)"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（|)\s*"?(About|around|约|大约|)\s*(?<bwh>(?<b>[\d\.]+)-(?<w>[\d\.]+)-(?<h>[\d\.]+))"?/i,
 			/bwh\s*is\s*(About|around|)\s*(?<bwh>(?<b>[\d\.]+)-(?<w>[\d\.]+)-(?<h>[\d\.]+))/i,
+			/"?measurements"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（|)\s*"?(?<bwh>(?<b>[\d\.]+)-(?<w>[\d\.]+)-(?<h>[\d\.]+))"?/i,
 		], {
 			match_do: (_, groups) => {
 				let { b, w, h, bwh } = groups
