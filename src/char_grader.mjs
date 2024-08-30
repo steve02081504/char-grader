@@ -616,11 +616,11 @@ export async function char_grader(arg, progress_stream = console.log) {
 			new RegExp(`(${related_names.join('|')})[^\\n\\.。]*[^\\d](?<tall>\\d+\\.?\\d*\\s*(cm|厘米|英尺|dm|m|km|光年|分米|米|千米|km|公里|英里|foot))`, 'i')
 		])
 		regex_prop_finder('weight', [
-			/"?体重"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（|)\s*"?(约|大约|)\s*(?<weight>\d+\.?\d*\s*(kg|千克|公斤|g|克|斤|t|吨|))"?/i,
-			/"?weight"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（|)\s*"?(About|around|)\s*(?<weight>\d+\.?\d*\s*(kg|千克|公斤|g|克|斤|t|吨|))"?/i,
-			/weight\s*is\s*(About|around|)\s*(?<weight>\d+\.?\d*\s*(kg|千克|公斤|g|克|斤|t|吨|))/i,
-			/weighs (?<weight>\d+\.?\d*\s*(kg|千克|公斤|g|克|斤|t|吨|))/i,
-			new RegExp(`(${related_names.join('|')})[^\\n\\.。]*[^\\d](?<weight>\\d+\\.?\\d*\\s*(kg|千克|公斤|g|克|斤|t|吨))`, 'i'),
+			/"?体重"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（|)\s*"?(约|大约|)\s*(?<weight>\d+\.?\d*\s*(\b(kg|g|t)\b|千克|公斤|克|斤|吨|))"?/i,
+			/"?weight"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（|)\s*"?(About|around|)\s*(?<weight>\d+\.?\d*\s*(\b(kg|g|t)\b|千克|公斤|克|斤|吨|))"?/i,
+			/weight\s*is\s*(About|around|)\s*(?<weight>\d+\.?\d*\s*(\b(kg|g|t)\b|千克|公斤|克|斤|吨|))/i,
+			/weighs (?<weight>\d+\.?\d*\s*(\b(kg|g|t)\b|千克|公斤|克|斤|吨|))/i,
+			new RegExp(`(${related_names.join('|')})[^\\n\\.。]*[^\\d](?<weight>\\d+\\.?\\d*\\s*(\\b(kg|g|t)\\b|千克|公斤|克|斤|吨))`, 'i'),
 		])
 		regex_prop_finder('birthday', [
 			/(生日|birthday)[^\n]+(?<birthday>(\d+月(-|)\d+日(?<remove>[^\d\n]*)(\d+(时|小时|点)(-|))?(\d+(分|分钟)(-|))?(\d+(秒|秒钟)(-|))?(\d+(毫秒|毫秒钟))?)|((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[^\d\n]+\d+(th|st|nd|rd)))/i,
@@ -650,7 +650,7 @@ export async function char_grader(arg, progress_stream = console.log) {
 								type: 'wrong_bwh',
 								score: diff
 							})
-							progress_stream(`cup size data cannot be calculated from the given bwh data: ${diff} scores.`)
+							progress_stream(`[warning] cup size data cannot be calculated from the given bwh data: ${diff} scores.`)
 						}
 					}
 				}
