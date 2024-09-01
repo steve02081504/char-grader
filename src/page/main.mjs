@@ -125,6 +125,7 @@ async function loadFile(file, filetype) {
 		if (!cards.length) logsElement.innerHTML = "<font color=\"red\">No cards found</font>"
 	}
 	else cards = [file]
+	if (file instanceof Blob && filetype == 'application/json') cards = [await file.text()]
 	return loadCards(cards)
 }
 /**
