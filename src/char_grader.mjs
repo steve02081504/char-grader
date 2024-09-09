@@ -175,7 +175,7 @@ export async function char_grader(arg, progress_stream = console.log) {
 	let persona_related_names = related_names.filter(_ => _ != 'user')
 	let persona_related_regex = new RegExp(`(${persona_related_names.join('|')})`, 'g')
 	let is_persona_card_x = format_text.match(persona_related_regex)?.length || 1.8
-	let not_persona_match = format_text.match(/not a (single|specific) character|Role Play Game system|RPG游戏系统|不是(一个|)特定(的|)角色|roleplay as NPCs|扮演[^\n.。]+(手机应用|app)/ig)
+	let not_persona_match = format_text.match(/system_name(:|：)\s*"?char"?|not a (single|specific) character|Role Play Game system|RPG游戏系统|不是(一个|)特定(的|)角色|roleplay as NPCs|扮演[^\n.。]+(手机应用|app)/ig)
 	if (not_persona_match)
 		is_persona_card_x /= not_persona_match.length * 6
 	else if (format_text.match(/(\b(assistant needs to advance the story using)\b)|char扮演/i))
