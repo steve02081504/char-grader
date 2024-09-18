@@ -221,21 +221,31 @@ export async function char_grader(arg, progress_stream = console.log) {
 			entry.secondary_keys = [...new Set(entry.secondary_keys)]
 			key_array.push(...entry.keys)
 			key_array.push(...entry.secondary_keys)
-			let warning_keys = []
+			let warning_ch_keys = []
+			let warning_short_english_keys = []
 
 			for (let key of [...entry.keys, ...entry.secondary_keys])
 				if (parseRegexFromString(key)) continue
 				else {
 					if (key.match(/^\/([\w\W]+?)\/([gimsuy]*)$/))
 						progress_stream(`[warning] the key '${key}' of WI entry '${get_entrie_names([entry])}' is not a valid regex.`)
-					if (entry.extensions.match_whole_words !== false)
+					if (entry.extensions.match_whole_words !== false) {
 						if (/\p{Unified_Ideograph}/u.test(key))
-							warning_keys.push(key)
+							warning_ch_keys.push(key)
+					}
+					else {
+						if (key.length <= 3 && /^[a-z]$/i.test(key)) {
+							warning_short_english_keys.push(key)
+						}
+					}
 				}
 			let entry_name = get_entrie_names([entry])
-			if (warning_keys.length) {
-				progress_stream(`[warning] the key${warning_keys.length > 1 ? 's' : ''} '${warning_keys.join("', '")}' of WI entry '${entry_name}' contains Chinese like character, but match_whole_words is not false, that's may not be what you want.`)
+			if (warning_ch_keys.length) {
+				progress_stream(`[warning] the key${warning_ch_keys.length > 1 ? 's' : ''} '${warning_ch_keys.join("', '")}' of WI entry '${entry_name}' contains Chinese like character, but match_whole_words is not false, that's may not be what you want.`)
 				match_whole_words_missing_num++
+			}
+			if (warning_short_english_keys.length) {
+				progress_stream(`[warning] the key${warning_short_english_keys.length > 1 ? 's' : ''} '${warning_short_english_keys.join("', '")}' of WI entry '${entry_name}' is too short, and match_whole_words is false, that's may match some false positive.`)
 			}
 			let is_LN = !/$<-(<WI(推理节点|推理節點|LogicalNode)(：|:)([\\s\\S]+?)>|[0-9a-z]{6})->\s*^/g.test(entry.content)
 			if (!entry.extensions.prevent_recursion && !is_LN) {
