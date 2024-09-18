@@ -156,7 +156,7 @@ export async function char_grader(arg, progress_stream = console.log) {
 	}
 
 	let char_names = [
-		...char?.name?.split(/\(|\[|\{|【|（/g)?.[0]?.split(/·|•|৹|-|的|の/g), 'char', char?.name?.endsWith('版') ? char?.name?.substring(0, -3) : ''
+		...char?.name?.split(/\(|\[|\{|【|（|\s+/g)?.[0]?.split(/·|•|৹|-|的|の/g), 'char', char?.name?.endsWith('版') ? char?.name?.substring(0, -3) : ''
 	].filter(_ => _)
 	let related_names = [
 		'user', '你', ...char_names
@@ -581,10 +581,10 @@ export async function char_grader(arg, progress_stream = console.log) {
 		}
 		// 有些卡片的卡片名和角色名是两码事——
 		regex_prop_finder('name', [
-			/\b"?(全名|full\s*name|真名|真实名称|real\s*name)"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（)\s*"?(?<name>[^\|\(\)（）\{\}。"'`\n]+)"?/i,
-			/全名是\s*["'`]?(?<name>[^\|\(\)（）\{\}。"'`\n]+)/i,
-			/\b"?(name|姓名|角色名|名称|名字)"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（)\s*"?(?<name>[^\|\(\)（）\{\}。"'`\n]+)"?/i,
-			/\b"?(nickname|昵称|网名|称呼)"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（)\s*"?(?<name>[^\|\(\)（）\{\}。"'`\n]+)"?/i,
+			/\b"?(全名|full\s*name|真名|真实名称|real\s*name)"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（)\s*"?(?<name>[^\|\(\)（）\{\}。"'`\n,]+)"?/i,
+			/全名是\s*["'`]?(?<name>[^\|\(\)（）\{\}。"'`\n,]+)/i,
+			/\b"?(name|姓名|角色名|名称|名字)"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（)\s*"?(?<name>[^\|\(\)（）\{\}。"'`\n,]+)"?/i,
+			/\b"?(nickname|昵称|网名|称呼)"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（)\s*"?(?<name>[^\|\(\)（）\{\}。"'`\n,]+)"?/i,
 		])
 		score_details.name = score_details.name.replace(/\{\{char\}\}/i, char.name).trim()
 		regex_prop_finder('sex', [
