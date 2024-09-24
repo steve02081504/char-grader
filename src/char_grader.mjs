@@ -565,12 +565,15 @@ export async function char_grader(arg, progress_stream = console.log) {
 		].filter(_ => _).join('\n')
 		content_text = content_text.replace(/\<(div|span|font|img)[^\>]*\>/g, '')
 		function regex_prop_finder(prop_name, regexs, {
+			remove_regs = [],
 			match_do = _ => score_details[prop_name] = _,
 			else_do = () => score_details[prop_name] ? 0 : progress_stream(`[info] can't find the ${prop_name} of ${score_details.name}.`)
 		} = {}) {
+			let match_content = content_text
+			for (const reg of remove_regs) match_content = match_content.replace(reg, '')
 			let result
 			for (const regex of regexs) {
-				result = content_text.match(regex)
+				result = match_content.match(regex)
 				if (result) {
 					let final_result = result.groups[prop_name].replace(result.groups.remove || '', '').trim()
 					if (final_result && !final_result.match(/^(Unknown|未知)$/i))
@@ -636,14 +639,18 @@ export async function char_grader(arg, progress_stream = console.log) {
 			/blood\s*type\s*is\s*(?<blood_type>(A|B|O|AB|\rh\+|rh\-)[^\n）]*(A|B|O|AB|\rh\+|rh\-|))/i
 		])
 		regex_prop_finder('tall', [
-			/身(高|长)\s*(:|：|\<\/td\>\s*\<td\>|\(|（|)\s*(约|大约|)\s*(?<tall>\d+\.?\d*\s*(cm|厘米|英尺|dm|m|km|光年|分米|米|千米|km|公里|英里|\s*foot|))/i,
-			/"?height"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（|)\s*"?(About|around|)\s*(?<tall>\d+\.?\d*\s*(cm|厘米|英尺|dm|m|km|光年|分米|米|千米|km|公里|英里|\s*foot|))"?/i,
-			/height\s*is\s*(About|around|)\s*(?<tall>\d+\.?\d*\s*(cm|厘米|英尺|dm|m|km|光年|分米|米|千米|km|公里|英里|\s*foot|))/i,
-			/"?tall"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（|)\s*"?(About|around|)\s*(?<tall>\d+\.?\d*\s*(cm|厘米|英尺|dm|m|km|光年|分米|米|千米|km|公里|英里|\s*foot|))"?/i,
-			/tall\s*is\s*(About|around|)\s*(?<tall>\d+\.?\d*\s*(cm|厘米|英尺|dm|m|km|光年|分米|米|千米|km|公里|英里|\s*foot|))/i,
-			/(?<tall>\d+\.?\d*\s*(cm|厘米|英尺|dm|m|km|光年|分米|米|千米|km|公里|英里|\s*foot|))( tall|的身高)/i,
-			new RegExp(`(${related_names.join('|')})[^\\n\\.。]*[^\\d](?<tall>\\d+\\.?\\d*\\s*(cm|厘米|英尺|dm|m|km|光年|分米|米|千米|km|公里|英里|foot))`, 'i')
-		])
+			/身(高|长)\s*(:|：|\<\/td\>\s*\<td\>|\(|（|)\s*(约|大约|)\s*(?<tall>\d+\.?\d*\s*(|厘米|英尺|光年|分米|米|千米|公里|英里|((foot|km|cm|dm|m|km)(?=\b))))/i,
+			/"?height"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（|)\s*"?(About|around|)\s*(?<tall>\d+\.?\d*\s*(|厘米|英尺|光年|分米|米|千米|公里|英里|((foot|km|cm|dm|m|km)(?=\b))))"?/i,
+			/height\s*is\s*(About|around|)\s*(?<tall>\d+\.?\d*\s*(|厘米|英尺|光年|分米|米|千米|公里|英里|((foot|km|cm|dm|m|km)(?=\b))))/i,
+			/"?tall"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（|)\s*"?(About|around|)\s*(?<tall>\d+\.?\d*\s*(|厘米|英尺|光年|分米|米|千米|公里|英里|((foot|km|cm|dm|m|km)(?=\b))))"?/i,
+			/tall\s*is\s*(About|around|)\s*(?<tall>\d+\.?\d*\s*(|厘米|英尺|光年|分米|米|千米|公里|英里|((foot|km|cm|dm|m|km)(?=\b))))/i,
+			/(?<tall>\d+\.?\d*\s*(|厘米|英尺|光年|分米|米|千米|公里|英里|((foot|km|cm|dm|m|km)(?=\b))))( tall|的身高)/i,
+			new RegExp(`(${related_names.join('|')})[^\\n\\.。]*[^\\d](?<tall>\\d+\\.?\\d*\\s*(厘米|英尺|光年|分米|米|千米|公里|英里|((foot|km|cm|dm|m|km)(?=\\b))))`, 'i')
+		], {
+			remove_regs: [
+				/(直径|半径)[^\n\.。]*\d+\.?\d*\s*(厘米|英尺|光年|分米|米|千米|公里|英里|((foot|km|cm|dm|m|km)(?=\b)))/g
+			]
+		})
 		regex_prop_finder('weight', [
 			/"?体重"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（|)\s*"?(约|大约|)\s*(?<weight>\d+\.?\d*\s*(\b(kg|g|t)\b|千克|公斤|克|斤|吨|))"?/i,
 			/"?weight"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（|)\s*"?(About|around|)\s*(?<weight>\d+\.?\d*\s*(\b(kg|g|t)\b|千克|公斤|克|斤|吨|))"?/i,
