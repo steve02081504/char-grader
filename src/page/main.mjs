@@ -322,36 +322,8 @@ async function fetchAndProcessFile(fileUrl) {
 	return result
 }
 
-import aws from 'aws-sdk'
 export async function shareCard(cardBuffer, /** @type {import('../charData.mjs').v1CharData} */ cardData) {
-	let result = await fetch('https://api.rochathub.com/rocard.tavern.v1.TavernService/SignUploadUrl', {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify({
-			tavernDesc: cardData.description || 'some description',
-			tavernName: cardData.name || 'some name'
-		})
-	})
-	if (!result.ok) throw result.statusText
-	result = await result.json()
-	let request = new aws.S3()
-	request.config.update({
-		credentials: {
-			accessKeyId: result.accessKeyId,
-			secretAccessKey: result.secretAccessKey,
-			sessionToken: result.sessionToken
-		},
-		region: 'ap-northeast-1'
-	})
-	await request.upload({
-		Bucket: 'rocard',
-		Key: result.filePath,
-		Body: cardBuffer,
-		ContentType: 'image/png'
-	}).promise()
-	return `https://rocard.s3.ap-northeast-1.amazonaws.com/${result.filePath}`
+	throw new Error('Not implemented')
 }
 
 if (window.location.search) {

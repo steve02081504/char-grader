@@ -4,7 +4,6 @@
 	"main": "src/index.mjs",
 	"dependencies": {
 		"@zip.js/zip.js": "latest",
-		"aws-sdk": "^2.1683.0",
 		"buffer": "latest",
 		"llama3-tokenizer-js": "latest",
 		"lz-string": "latest",

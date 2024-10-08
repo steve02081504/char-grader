@@ -275,45 +275,6 @@ function getHostFromUrl(url) {
 	}
 }
 
-// rocard.ai
-async function downloadRocardCharacter(id) {
-	let result = await fetch('https://api.rochathub.com/rocard.tavern.v1.TavernService/DownloadTavern', {
-		method: 'POST',
-		body: JSON.stringify({
-			tavernId: id
-		}),
-		headers: {
-			'content-type': 'application/json'
-		}
-	})
-
-	let check = async _ => {
-		if (!result.ok) {
-			const text = await result.text()
-			console.log('Rocard returned error', result.statusText, text)
-			throw new Error('Failed to download character')
-		}
-	}
-	await check()
-
-	const json = await result.json()
-	result = await fetch(json.downloadUrl)
-	await check()
-
-	const buffer = await result.buffer()
-	const fileName = `${sanitize(id)}.png`
-	const fileType = result.headers.get('content-type') || 'image/png'
-
-	return { buffer, fileName, fileType }
-}
-
-function parseRocardUrl(url) {
-	// https://rocard.ai/t/114514
-	const pattern = /^https?:\/\/rocard\.ai\/t\/(\d+)\/?$/i
-	const match = url.match(pattern)
-	return match ? match[1] : null
-}
-
 async function downloadGithubCharacter(id) {
 	const result = await fetch(`https://api.github.com/repos/${id}/releases/latest`)
 
@@ -359,7 +320,6 @@ export async function downloadCharacter(url) {
 	const isPygmalionContent = host.includes('pygmalion.chat')
 	const isAICharacterCardsContent = host.includes('aicharactercards.com')
 	const isRisu = host.includes('realm.risuai.net')
-	const isRocard = host.includes('rocard.ai')
 	const isGitHub = host.includes('github.com')
 
 	if (isPygmalionContent) {
@@ -409,14 +369,6 @@ export async function downloadCharacter(url) {
 
 		type = 'character'
 		result = await downloadRisuCharacter(uuid)
-	}
-	else if (isRocard) {
-		const id = parseRocardUrl(url)
-		if (!id)
-			throw new Error('Not found')
-
-		type = 'character'
-		result = await downloadRocardCharacter(id)
 	}
 	else if (isGitHub) {
 		const id = parseGithubUrl(url)
