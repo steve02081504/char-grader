@@ -3,7 +3,7 @@ import { write } from '../character-card-parser.mjs'
 import { encoder } from '../get_token_size.mjs'
 import { downloadCharacter, getCharacterSource } from './char-download.mjs'
 import { extractPngsFromRar } from './rar.mjs'
-import { extractPngsFromZip } from './zip.mjs'
+import { extractPngsFromZip, isFoundPart } from './zip.mjs'
 import { Buffer } from 'buffer'
 import { Converter } from 'showdown'
 
@@ -122,7 +122,13 @@ async function loadFile(file, filetype) {
 				alert(e)
 			}
 		}
-		if (!cards.length) logsElement.innerHTML = "<font color=\"red\">No cards found</font>"
+		if (!cards.length) {
+			logsElement.innerHTML = "<font color=\"red\">No cards found</font>"
+			try {
+				if (isFoundPart(file))
+					logsElement.innerHTML = "<font color=\"red\">this card is for <a href=\"https://github.com/steve02081504/fount\">fount</a>, not for ST stuff.</font>"
+			} catch (e) { }
+		}
 	}
 	else cards = [file]
 	if (file instanceof Blob && filetype == 'application/json') cards = [await file.text()]
