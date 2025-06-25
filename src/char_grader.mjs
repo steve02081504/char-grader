@@ -663,11 +663,11 @@ export async function char_grader(arg, progress_stream = console.log) {
 			/(生日|birthday)[^\n]+(?<birthday>(\d+月(-|)\d+日(?<remove>[^\d\n]*)(\d+(时|小时|点)(-|))?(\d+(分|分钟)(-|))?(\d+(秒|秒钟)(-|))?(\d+(毫秒|毫秒钟))?)|((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[^\d\n]+\d+(th|st|nd|rd)))/i,
 		])
 		regex_prop_finder('bwh', [
-			/(?<bwh>(?<b>[\d\.]+)b(-|\/)(?<w>[\d\.]+)w(-|\/)(?<h>[\d\.]+)h)/i,
-			/(?<bwh>b(?<b>[\d\.]+)(-|\/)w(?<w>[\d\.]+)(-|\/)h(?<h>[\d\.]+))/i,
-			/"?(bwh|三围|三维)"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（|)\s*"?(About|around|约|大约|)\s*(?<bwh>(?<b>[\d\.]+)-(?<w>[\d\.]+)-(?<h>[\d\.]+))"?/i,
-			/bwh\s*is\s*(About|around|)\s*(?<bwh>(?<b>[\d\.]+)-(?<w>[\d\.]+)-(?<h>[\d\.]+))/i,
-			/"?measurements"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（|)\s*"?(?<bwh>(?<b>[\d\.]+)-(?<w>[\d\.]+)-(?<h>[\d\.]+))"?/i,
+			/(?<bwh>(?<b>[\d\.]+)b\s*(-|\/)\s*(?<w>[\d\.]+)w\s*(-|\/)\s*(?<h>[\d\.]+)h)/i,
+			/(?<bwh>b(?<b>[\d\.]+)\s*(-|\/)\s*w(?<w>[\d\.]+)\s*(-|\/)\s*h(?<h>[\d\.]+))/i,
+			/"?(bwh|三围|三维)"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（|)\s*"?(About|around|约|大约|)\s*(?<bwh>(?<b>[\d\.]+)\s*(-|\/)\s*(?<w>[\d\.]+)\s*(-|\/)\s*(?<h>[\d\.]+))"?/i,
+			/bwh\s*is\s*(About|around|)\s*(?<bwh>(?<b>[\d\.]+)\s*(-|\/)\s*(?<w>[\d\.]+)\s*(-|\/)\s*(?<h>[\d\.]+))/i,
+			/"?measurements"?\s*(:|：|\<\/td\>\s*\<td\>|\(|（|)\s*"?(?<bwh>(?<b>[\d\.]+)\s*(-|\/)\s*(?<w>[\d\.]+)\s*(-|\/)\s*(?<h>[\d\.]+))"?/i,
 		], {
 			match_do: (_, groups) => {
 				let { b, w, h, bwh } = groups
