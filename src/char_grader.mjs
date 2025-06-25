@@ -423,7 +423,7 @@ export async function char_grader(arg, progress_stream = console.log) {
 			score_details.full_text = disabled_WIs[rand_result]?.content || ''
 		}
 		gzip_text = remove_simple_marcos(gzip_text)
-		if (score_details.full_text.length / gzip_text.length < 0.7) score_details.full_text = gzip_text
+		if (gzip_text.length / score_details.full_text.length < 0.7) score_details.full_text = gzip_text
 		let compressed = compressToUTF16(gzip_text)
 		let compress_ratio = compressed.length / gzip_text.length
 		if (!isNaN(compress_ratio)) {
