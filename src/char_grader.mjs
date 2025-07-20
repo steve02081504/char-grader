@@ -175,11 +175,14 @@ export async function char_grader(arg, progress_stream = console.log) {
 	let persona_related_names = related_names.filter(_ => _ != 'user')
 	let persona_related_regex = new RegExp(`(${persona_related_names.join('|')})`, 'g')
 	let is_persona_card_x = format_text.match(persona_related_regex)?.length || 1.8
+	let is_persona_card_y = format_text_length / 97
 	let not_persona_match = format_text.match(/system_name(:|：)\s*"?char"?|not a (single|specific) character|Role Play Game system|RPG游戏系统|不是(一个|)特定(的|)角色|roleplay as NPCs|扮演[^\n.。]+(手机应用|app)/ig)
 	if (not_persona_match)
 		is_persona_card_x /= not_persona_match.length * 6
 	else if (format_text.match(/(\b(assistant needs to advance the story using)\b)|char扮演/i))
 		is_persona_card_x *= 2.1
+	else if (wibook_entries.map(_ => _.content).filter(_ => _?.length).join('\n').match(/("|\b)name"?(:|：)\s*/)?.length > 1)
+		is_persona_card_y *= 2.1
 	{
 		let name_regex = new RegExp(`(${related_names.join('|')})[^\\n。.]*(他|她|\\b(he|she)\\b)`, 'i')
 		if (format_text.match(name_regex))
@@ -195,7 +198,6 @@ export async function char_grader(arg, progress_stream = console.log) {
 		if (char.tags.map(_ => _.match(/^(oc|male|female)$/i))?.filter(_ => _).length)
 			is_persona_card_x *= 13.1
 	}
-	let is_persona_card_y = format_text_length / 97
 	let is_persona_card = is_persona_card_x >= is_persona_card_y
 	progress_stream(`[info] ${char.name} is ${is_persona_card ? '' : 'not '} a persona card: x=${is_persona_card_x}, y=${is_persona_card_y}`)
 
